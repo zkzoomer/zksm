@@ -4,7 +4,7 @@ Simple state machines designed using the [PIL](https://github.com/0xPolygonHerme
 
 ## Setup 
 
-First you will need to install [pilcom](https://github.com/0xPolygonHermez/pilcom). You can do so by cloning the repo directly inside this one:
+First you will need to install [PILCOM](https://github.com/0xPolygonHermez/pilcom). You can do so by cloning the repo directly inside this one:
 
 ```
 git clone https://github.com/0xPolygonHermez/pilcom
