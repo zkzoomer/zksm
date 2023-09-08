@@ -4,7 +4,13 @@ Simple state machines designed using the [PIL](https://github.com/0xPolygonHerme
 
 ## Setup 
 
-First you will need to install [PILCOM](https://github.com/0xPolygonHermez/pilcom), which is used to describe the computations of any state machine and compile them into a parsed version (in `.json` format) that can be interpreted by other software components. You can do so by cloning the repo directly inside this one:
+Install the necessary packages by doing:
+
+```
+npm install
+```
+
+We describe the computations of any state machine inside `.pil` files. We use [PILCOM](https://github.com/0xPolygonHermez/pilcom) to compile them into a parsed version (in `.json` format) that can be interpreted by other software components. You can install PILCOM by cloning the repo directly inside this one:
 
 ```
 git clone https://github.com/0xPolygonHermez/pilcom
