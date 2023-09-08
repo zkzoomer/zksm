@@ -1,0 +1,17 @@
+{
+  "name": "zksm",
+  "version": "1.0.0",
+  "description": "Simple state machines designed using the [PIL](https://github.com/0xPolygonHermez/pilcom) and [zkASM](https://github.com/0xPolygonHermez/zkasmcom) languages from the [Polygon zkEVM](https://github.com/0xPolygonHermez)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chai": "^4.3.8",
+    "pil-stark": "^0.0.56",
+    "yargs": "^17.7.2"
+  }
+}
