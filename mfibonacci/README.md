@@ -31,7 +31,7 @@ In addition to these transition constraints between states, we also have **bound
 
 There are three phases for the PIL-STARK process: setup, proving and verification.
 
-### PIL-STARK Setup Phase
+### I. PIL-STARK Setup Phase
 
 There are three distinct components: the [PILCOM step](#compilation-with-pilcom), the [Setup Executor step](#the-setup-executor), and the final [PIL-STARK Setup step](#pil-stark-setup). 
 
@@ -61,7 +61,7 @@ In our case, the STARK configuration can be found in the file [`mfibonacci.stark
 
 This setup step will output the `constTree`, which is a Merkle tree of evaluations of the constant polynomials; the `starkInfo`, which is STARK-specific information; and the `constRoot`, which is the root of the `constTree`.
 
-### PIL-STARK Proving Phase
+### II. PIL-STARK Proving Phase
 
 It consists of two main components: the [SM-Prover Executor](#the-sm-provers-executor), which assigns values to the remaining polynomials; and the [PIL-STARK proof generator](#pil-stark-proof-generator).
 
@@ -82,7 +82,7 @@ In this step, the evaluations of the committed polynomials get *Merkle-lized*. A
 
 The output of the STARK proof generator is a STARK proof alongside the public inputs that are linked to the proof.
 
-### PIL-STARK Verification Phase
+### III. PIL-STARK Verification Phase
 
 The verifier will take as inputs the STARK proof and public inputs from the [prover](#pil-stark-proof-generator), as well as the `starkInfo` and `constRoot` from the [setup phase](#pil-stark-setup). 
 
