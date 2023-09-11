@@ -1,0 +1,26 @@
+// MULTIPLICATIVE FIBONACCI
+// 
+
+// Size (degree) of the polynomials, i.e., number of rows of the execution trace
+constant %N = 1024;
+
+// The namespace of the SM becomes a prefix to name all of the SM's polynomials
+namespace mFibonacci(%N);
+    // Defines the `ISLAST` polynomial (which introduces cyclicity) as a preprocessed constant
+    pol constant ISLAST;  // 0, 0, ..., 0, 1
+    // Defines the committed polynomials: each of the other two columns of our execution trace, A and B
+    pol commit a, b;
+    // Unrolls the expression for use below
+    // PIL only supports degree-two expressions, so this intermediate step is required
+    pol ab = a * b;
+
+    // Public output: the series value at the N-th position
+    public out = a(%N - 1);
+
+    // Enforces the zero-checks of the transition constraints
+    (1 - ISLAST) * (a' - b) = 0;
+    (1 - ISLAST) * (b' - ab) = 0;
+
+    // Enforces the zero-check of the boundary constraint 
+    // The colon-prefix, `:`, indicates a reading of the value stored at `out`
+    ISLAST * (a - :out) = 0;
