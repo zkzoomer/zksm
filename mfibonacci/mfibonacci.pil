@@ -1,5 +1,4 @@
 // MULTIPLICATIVE FIBONACCI
-// 
 
 // Size (degree) of the polynomials, i.e., number of rows of the execution trace
 constant %N = 1024;
