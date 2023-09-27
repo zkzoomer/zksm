@@ -243,3 +243,13 @@ Where we recall that the equivalent for the $zkPC$ in the ROM is the $line$. Thi
 ```
 
 Where we are ensuring that, for each row of our execution trace, the tuple $(CONST, inA, inB, inFREE, setA, setB, JMP, JMPZ, offset, zkPC)$ is contained in the ROM table. Enforcing constraints between the ROM polynomials is not needed, as they are constant and publicly known.
+
+# Running the State Machine
+
+Compiling of the `zkasm` and `pil` files, as well as generating and verifying the STARK proof is all done from the [`executor.js`](./executor.js) file. To run the whole process run the command:
+
+```
+node executor.js [freeInput] [romFile]
+```
+
+Where `freeInput` is the free input value that is given to the state machine, and `romFile` is a valid ROM that uses the instruction set supported by our `pil` file.
