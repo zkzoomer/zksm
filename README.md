@@ -10,37 +10,11 @@ Install the necessary packages by doing:
 npm install
 ```
 
-#### PILCOM
+These include the following language packages needed for defining a zero-knowledge state machine:
 
-We describe the computations of any state machine inside `.pil` files. We use [PILCOM](https://github.com/0xPolygonHermez/pilcom) to compile them into a parsed version (in `.json` format) that can be interpreted by other software components. You can install PILCOM by cloning the repo directly inside this one:
+- PIL: We describe the computations of any state machine inside `.pil` files. We use [PILCOM](https://github.com/0xPolygonHermez/pilcom) to compile them into a parsed version (in `.json` format) that can be interpreted by other software components.
 
-```
-git clone https://github.com/0xPolygonHermez/pilcom
-```
-
-And then installing the module and building the parser:
-
-```
-cd pilcom
-npm install
-npm run build
-```
-
-#### zkASM
-
-We use the ZK Assembly Language to describe the ROM of our processor, which tells the executor how to interpret the different kinds of transactions that it could possibly receive as an input. We use the [zkASM Compiler](https://github.com/0xPolygonHermez/zkasmcom) to compile these descriptions in the form of a `.zkasm` into a parsed version (in `.json` format) ready for the executor to interpret. You can install the zkASM Compiler by cloning the repo directly inside this one:
-
-```
-git clone https://github.com/0xPolygonHermez/zkasmcom
-```
-
-And then installing the module and building the parser:
-
-```
-cd zkasmcom
-npm install
-npm run build
-```
+- zkASM: We use the ZK Assembly Language to describe the ROM of our processor, which tells the executor how to interpret the different kinds of transactions that it could possibly receive as an input. We use the [zkASM Compiler](https://github.com/0xPolygonHermez/zkasmcom) to compile these descriptions in the form of a `.zkasm` into a parsed version (in `.json` format) ready for the executor to interpret.
 
 ## Examples
 

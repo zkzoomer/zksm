@@ -10,7 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@0xpolygonhermez/pilcom": "https://github.com/0xPolygonHermez/zkasmcom.git#audit.1",
+    "@0xpolygonhermez/zkasmcom": "https://github.com/0xPolygonHermez/zkasmcom.git#v1.0.0",
     "chai": "^4.3.8",
+    "ffjavascript": "^0.2.60",
     "pil-stark": "^0.0.56",
     "pilcom": "^0.0.23",
     "yargs": "^17.7.2"
