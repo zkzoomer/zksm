@@ -122,7 +122,7 @@ Since all values of the execution trace belong to the field $\mathbb{F}_p$, wher
 
 ## State Machines With Jumps
 
-The Fast Fourier Transforms that we will use over these registry polynomials are most efficient for those with degree $T + 1 = 2^N$ (meaning the number of rows of our execution trace is a power of $2$). In this section we will cover the question, how do we end the program when the trace has size *lower* the size of our polynomials? The resulting execution trace should still preserve the cyclicity properties.
+The Fast Fourier Transforms that we will use over these registry polynomials are most efficient for those with degree $T + 1 = 2^N$ (meaning the number of rows of our execution trace is a power of $2$). In this section we will cover the question: how do we end the program when the trace has size *lower* the size of our polynomials? The resulting execution trace should still preserve the cyclicity properties.
 
 State Machines with jumps introduce additional dynamics to the executor's output, as the instructions are not sequentially executed. More checks need to be added so that the state machine can properly prove correct behaviour:
 
@@ -204,9 +204,9 @@ To ensure cyclicity, we use a loop while the current line is less than $T$, that
 start:  ; main entry point of our machine
     ${getFreeInput()} => A
     -3 => B
-    :ADD
-    A :JMPZ(finalWait)  ; jumps on condition that A is 0
-    :ADD
+    $ => A              :ADD
+    A                   :JMPZ(finalWait)  ; jumps on condition that A is 0
+    $ => A              :ADD
 
 finalWait:  ; final loop for the cycle
     ${beforeLast()}     :JMPZ(finalWait)
@@ -235,4 +235,11 @@ $$
     { Rom.CONST, Rom.inA, Rom.inB, Rom.inFree, Rom.setA, Rom.setB, Rom.JMP, Rom.JMPZ, Rom.offset, Rom.line }
 $$
 
-Where we recall that the equivalent for the $zkPC$ in the ROM is the $line$.
+Where we recall that the equivalent for the $zkPC$ in the ROM is the $line$. This check is performed row-wise, meaning by use of the following snippet of `zkasm` code:
+
+```
+    {CONST, inA, inB, inFREE, setA, setB, JMPZ, offset, zkPC} in 
+        {Rom.CONST, Rom.inA, Rom.inB, Rom.inFREE, Rom.setA, Rom.setB, Rom.JMPZ, Rom.jmpAddr, Rom.line};
+```
+
+Where we are ensuring that, for each row of our execution trace, the tuple $(CONST, inA, inB, inFREE, setA, setB, JMP, JMPZ, offset, zkPC)$ is contained in the ROM table. Enforcing constraints between the ROM polynomials is not needed, as they are constant and publicly known.
