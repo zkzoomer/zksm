@@ -42,7 +42,7 @@ We use [PILCOM](https://github.com/0xPolygonHermez/pilcom) to compile the [`mfib
 After [installing PILCOM](../README.md#setup), we can compile the [`mfibonacci.pil`](./mfibonacci.pil) file from this directory by running:
 
 ```
-node ../pilcom/src/pil.js mfibonacci.pil -o mfibonacci.pil.json
+npx pilcom mfibonacci.pil -o mfibonacci.pil.json
 ```
 
 The output on the terminal provides information on the number of constant and committed polynomials used, the number of polynomial identities to be checked, as well as other information which will become relevant in later examples. The resulting file contains different keys describing the polynomials and the relations between them, which are useful for debugging purposes.
