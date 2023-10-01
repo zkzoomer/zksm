@@ -252,4 +252,10 @@ Compiling of the `zkasm` and `pil` files, as well as generating and verifying th
 node executor.js [freeInput] [romFile]
 ```
 
-Where `freeInput` is the free input value that is given to the state machine, and `romFile` is a valid ROM that uses the instruction set supported by our `pil` file.
+Where `freeInput` is the free input value that is given to the state machine, and `romFile` is a valid ROM that uses the instruction set supported by our `pil` file, like the ones available on the [`roms`](./roms/) folder. An example of this execution would be:
+
+```
+node executor.js 7 roms/rom-a.zkasm
+```
+
+Which will output the final value for the `A` registry, $1$.
