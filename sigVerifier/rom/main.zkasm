@@ -1,0 +1,142 @@
+INCLUDE "constants.zkasm"
+INCLUDE "end.zkasm"
+INCLUDE "load-tx-rlp.zkasm"
+INCLUDE "process-tx.zkasm"
+INCLUDE "utils.zkasm"
+INCLUDE "vars.zkasm"
+
+/** Signature Verifier zkROM
+*       A - Load initial registers into memory: oldNumBatch (SP) & chainID (GAS)
+*       B - Loop parsing RLP signatures
+*       C - Loop processing signatures
+*       D - Batch computations: assert signatures size, compute batchHashData
+*       E - Finalize execution
+*/
+
+/**
+*   Main zkROM entry point
+*/
+start: 
+    /**
+    *   A - Load input variables
+    */
+
+    ; Ensure it is the beginning of the execution
+    STEP => A
+    0                                   :ASSERT 
+
+    ; Ensure that the version of the ROM is corrrect, ie, equal to the `fork_id` input variable
+    CTX                                 :MSTORE(forkID)
+    CTX - %FORK_ID                      :JMPZ(failAssert)
+
+    ; Store input variables into memory
+    SP                                  :MSTORE(oldNumBatch)
+    GAS                                 :MSTORE(chainID)  ; Assumed to be less than 32 bits
+
+    ${getTimestamp()}                   :MSTORE(timestamp)
+    ${getTxsLen()}                      :MSTORE(batchL2DataLength) ; Less than 300.000 bytes. Enforced by the smart contract
+
+    ; Increase batch number
+    SP + 1                              :MSTORE(newNumBatch)
+
+    /**
+    * B - Loop parsing RLP (Recursive-length prefix) signatures
+    * For each signature a new zkASM memory context is created, and the signature data is parsed to 
+    * extract the values which are stored in memory for later use. Signature data is also used to compute
+    * the accumulated hash of the batch:
+    *      - Load signature RLP data and ensure it has correct RLP encoding
+    *      - If an error is found in any signature, the batch will not process any signature
+    */
+
+    ; Prepare the Keccak instance    
+    E + 1 => E                          :MSTORE(lastHashKIdUsed)
+    0                                   :MSTORE(batchHashPos)  ; Pointer is increased with each signature added 
+    E                                   :MSTORE(batchHashDataId)
+
+    ; Set `ctxToUse` to the last context used value
+    $ => A                              :MLOAD(lastCtxUsed)
+    A + %CALLDATA_RESERVED_CTX => A     :MSTORE(ctxTxToUse) ; Points at first context to be used when processing signatures. We reserve ctx = 1 for calldata
+    A                                   :MSTORE(lastCtxUsed)
+
+    ; TODO: what does this count?
+    $${var p = 0}
+
+    ; Set flag isLoadingRLP to 1
+    1                                   :MSTORE(isLoadingRLP)
+
+    ; Execute this loop for each signature in the batch
+    txLoopRLP:
+        ; The variable `lastCtxUsed` acts as the loop index
+        ; It is also used to give a specific context number to each signature
+        $ => A                          :MLOAD(lastCtxUsed)
+        A + 1 => CTX                    :MSTORE(lastCtxUsed)
+
+        ; Get the amount of total data and the amount of data parsed, respectively
+        $ => A                          :MLOAD(batchL2DataLength)
+        $ => C                          :MLOAD(batchL2DataParsed)
+        ; End the loop if the amount of data parsed equals the total data, otherwise execute `loadTx_rlp`
+        C - A                           :JMPN(loadTx_rlp, endCheckRLP)
+
+    ; End the RLP parsing loop 
+    endCheckRLP:
+        ; set flag isLoadingRLP to 0
+        0                               :MSTORE(isLoadingRLP)
+                                        :JMP(txLoop)
+
+    /**
+    * C - Iterates again through all signatures in the batch, verifying each one of them
+    */
+
+    txLoop:
+        ; The variable `pendingTxs` acts as the loop index, decrementing by 1 in each iteration
+        $ => A                          :MLOAD(pendingTxs)
+        ; End the loop when all signatures in the batch are already processed
+        A - 1                           :MSTORE(pendingTxs), JMPN(processTxsEnd)
+
+        ; Having parsed the batch of signatures, transaction data can now be accessed via zkASM memory opcodes
+        $ => A                          :MLOAD(ctxTxToUse) ; Load first context used by signature
+        A + 1 => CTX                    :MSTORE(ctxTxToUse), JMP(processTx)
+
+    ; Restart the loop after a signature has been verified
+    processTxFinished:
+        $${eventLog(onFinishTx)}        :JMP(txLoop)
+
+    ; End the signature verification loop 
+    processTxsEnd:
+        /**
+        * E - Batch asserts & computations:
+        *      - assert signatures size
+        *      - compute batchHashData
+        */
+
+        ; Transaction size verification
+        ; Ensure bytes added to compute the `batchHashData` matches the number of bytes loaded from input
+        $ => A                          :MLOAD(batchHashPos)
+        $                               :MLOAD(batchL2DataLength), ASSERT
+
+        ;; Compute the Keccak hash for the batch of signatures, `batchHashData`, ensuring integrity of the data queried from L1
+        A => HASHPOS
+        $ => E                          :MLOAD(batchHashDataId)
+
+        HASHPOS                         :HASHKLEN(E)
+        $ => A                          :HASHKDIGEST(E)
+
+        A                               :MSTORE(batchHashData)
+
+        $${eventLog(onFinishBatch)}
+
+        /**
+        * F - Finalize execution
+        */
+
+        ; Set output registers as the computation results
+        $ => PC                         :MLOAD(newNumBatch)
+
+        ; Set registers to their initial values
+        $ => CTX                        :MLOAD(forkID)
+        $ => SP                         :MLOAD(oldNumBatch)
+        $ => GAS                        :MLOAD(chainID)
+
+        ; Finalize execution by jumping to the final wait
+        finalizeExecution:
+                                        :JMP(finalWait)

@@ -1,0 +1,193 @@
+VAR GLOBAL tmpVarBgetLen
+VAR GLOBAL tmpVarCgetLen
+VAR GLOBAL tmpVarDgetLen
+VAR GLOBAL tmpZkPCgetLen
+; @info byte length of B
+; @in B => number
+; @out A => bytes length
+getLenBytes:
+    ; Check zk-counters
+    %MAX_CNT_STEPS - STEP - 20      :JMPN(outOfCountersStep)
+    ; Store current registries
+    RR                              :MSTORE(tmpZkPCgetLen)
+    B                               :MSTORE(tmpVarBgetLen)
+    C                               :MSTORE(tmpVarCgetLen)
+    D                               :MSTORE(tmpVarDgetLen)
+    ; Set C as counter to 0
+    0 => C
+    B => A
+
+; @info Arithmetic division
+; @in: arithA: Dividend value
+; @in: arithB: Divisor value
+; @out: arithRes1: Quotient of division arithA / arithB
+; @out: arithRes2: Remainder of division arithA % arithB
+divARITH:
+    ; Check zk-counters
+    %MAX_CNT_STEPS - STEP - 50      :JMPN(outOfCountersStep)
+    %MAX_CNT_BINARY - CNT_BINARY - 3:JMPN(outOfCountersBinary)
+    %MAX_CNT_ARITH - CNT_ARITH - 1  :JMPN(outOfCountersArith)
+
+    RR                              :MSTORE(tmpZkPCArith), CALL(storeTmp)
+    $ => E                          :MLOAD(arithA)
+    $ => A                          :MLOAD(arithB)
+    ; Check denominator(A) is not zero
+    0 => B
+    $                               :EQ, JMPC(zeroDiv)
+
+    ; Check if divisor (E) is smaller than denominator E < A
+    A => C  ; Store temporally A in C
+    E => A  ; Divisor
+    C => B  ; Denominator
+    $                               :LT, JMPC(divisorSmallerDiv)
+    C => A
+
+    ${E%A} => C ; remainder
+    ${E/A} => B
+    0 => D
+    E                               :ARITH
+
+    B                               :MSTORE(arithRes1)
+    C                               :MSTORE(arithRes2)
+
+    ; Check divisor > remainder
+    A => B  ; Divisor
+    C => A  ; Remainder
+    $ => A                          :LT
+    1                               :ASSERT,CALL(loadTmp)
+    $ => RR                         :MLOAD(tmpZkPCArith)
+                                    :RETURN
+
+zeroDiv:
+    0                               :MSTORE(arithRes1)
+    0                               :MSTORE(arithRes2), CALL(loadTmp)
+    $ => RR                         :MLOAD(tmpZkPCArith)
+                                    :RETURN
+
+divisorSmallerDiv:
+    0                               :MSTORE(arithRes1)
+    E                               :MSTORE(arithRes2), CALL(loadTmp)
+    $ => RR                         :MLOAD(tmpZkPCArith)
+                                    :RETURN
+
+loadTmp:
+    $ => A                          :MLOAD(tmpVarAArith)
+    $ => B                          :MLOAD(tmpVarBArith)
+    $ => C                          :MLOAD(tmpVarCArith)
+    $ => D                          :MLOAD(tmpVarDArith)
+    $ => E                          :MLOAD(tmpVarEArith), RETURN
+
+storeTmp:
+    A                               :MSTORE(tmpVarAArith)
+    B                               :MSTORE(tmpVarBArith)
+    C                               :MSTORE(tmpVarCArith)
+    D                               :MSTORE(tmpVarDArith)
+    E                               :MSTORE(tmpVarEArith), RETURN
+
+;@info Shift left D bytes to A
+;@in A - (A << D)
+;@in D - (A << D) D bytes
+;@out A -  A << D => A
+SHLarith:
+    ; check zk-counters
+    %MAX_CNT_STEPS - STEP - 100     :JMPN(outOfCountersStep)
+    %MAX_CNT_BINARY - CNT_BINARY - 4:JMPN(outOfCountersBinary)
+    %MAX_CNT_ARITH - CNT_ARITH - 2  :JMPN(outOfCountersArith)
+    RR                              :MSTORE(tmpSHXZkPC2)
+    B                               :MSTORE(tmpVarBSHX)
+    C                               :MSTORE(tmpVarCSHX)
+    D                               :MSTORE(tmpVarDSHX)
+    E                               :MSTORE(tmpVarESHX)
+    ; E init number
+    A => E
+    ; A bytes
+    D => A
+    8 => B
+    0 => C, D
+    ; D = A * 8, D bits
+    ${A*B} => D             :ARITH
+    ; A init number
+    E => A
+                                    :JMP(SHLarithinit)
+SHLarithBit:
+    ; check zk-counters
+    %MAX_CNT_STEPS - STEP - 100     :JMPN(outOfCountersStep)
+    %MAX_CNT_BINARY - CNT_BINARY - 2:JMPN(outOfCountersBinary)
+    %MAX_CNT_ARITH - CNT_ARITH - 1  :JMPN(outOfCountersArith)
+    RR                              :MSTORE(tmpSHXZkPC2)
+    B                               :MSTORE(tmpVarBSHX)
+    C                               :MSTORE(tmpVarCSHX)
+    D                               :MSTORE(tmpVarDSHX)
+    E                               :MSTORE(tmpVarESHX)
+
+SHLarithinit:
+    ; E init number
+    A => E
+    0 => A
+    ; D --> B bits
+    D => B
+    ; if D == 0 --> no shift
+    $                               :EQ,JMPC(SHLarithfinal)
+    255 => A
+     ; A < B, 255 < bits
+    $                               :LT,JMPC(SHLarith0)
+
+    D => RR
+    ; A init number and calculate B = 2**D
+    E => A                          :CALL(@exp_num + RR); out:[B: 2**RR]
+    ; E = init number * 2**D (result)
+    ${A*B} => E
+    E                               :MSTORE(result)
+    ; D = 256 - D
+    256 - D => D, RR
+    B => C                          :CALL(@exp_num + RR); out:[B: 2**RR]
+    ${A/B} => D
+    C => B
+    0 => C
+    E                               :ARITH, JMP(SHLarithfinal)
+
+SHLarith0:
+    0 => E
+                                    :JMP(SHLarithfinal)
+
+SHLarithfinal:
+    E => A
+    $ => B                          :MLOAD(tmpVarBSHX)
+    $ => C                          :MLOAD(tmpVarCSHX)
+    $ => D                          :MLOAD(tmpVarDSHX)
+    $ => RR                         :MLOAD(tmpSHXZkPC2)
+    $ => E                          :MLOAD(tmpVarESHX), RETURN
+
+;@info Out of counters full tracer event trigger
+outOfCountersStep:
+    $${eventLog(onError, OOCS)}     :JMP(handleBatchError)
+outOfCountersKeccak:
+    $${eventLog(onError, OOCK)}     :JMP(handleBatchError)
+outOfCountersBinary:
+    $${eventLog(onError, OOCB)} :JMP(handleBatchError)
+outOfCountersArith:
+    $${eventLog(onError, OOCA)} :JMP(handleBatchError)
+    
+handleBatchError:
+    ; restore init state root and finish batch
+    $ => SR                         :MLOAD(batchSR)
+    ; if batch error is triggered while parsing the RLP, it jumps to 'appendTxsInit'
+    ; to fill the missing bytes to complete 'batchDataHash'
+    $                               :MLOAD(isLoadingRLP),JMPNZ(appendTxsInit)
+    $${eventLog(onFinishTx)}        :JMP(processTxsEnd)
+
+;@info Function to force a failed assert
+failAssert:
+    1 => A
+    2                               :ASSERT
+
+;@info: adds data to batchHashdata byte by byte
+;@in: A: bytes to add
+;@in D: bytes length
+addBatchHashByteByByte:
+    %MAX_CNT_STEPS - STEP - 10      :JMPN(outOfCountersStep)
+    RR                              :MSTORE(tmpZkPCaddB)
+    A                               :MSTORE(auxBytes)
+    D                               :MSTORE(tmpVarDaddB)
+    B                               :MSTORE(tmpVarBaddB)
+    1 => D

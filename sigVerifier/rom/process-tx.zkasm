@@ -1,0 +1,58 @@
+INCLUDE "ecrecover/ecrecover.zkasm"
+INCLUDE "2-exp.zkasm"
+
+/** Blocks processing transactions
+*       A - Verify ECDSA signature
+*       B - Verify chainID
+*/
+
+processTx:
+    /**
+    * A - Verify ecdsa signature
+    */
+
+    $${eventLog(onProcessTx)}
+
+    ; Store initial state at the beginning of the transaction
+    SR                                  :MSTORE(originSR)
+    SR                                  :MSTORE(initSR)
+    CTX                                 :MSTORE(currentCTX)
+
+    ; Minimum of 100000 steps left to process a tx
+    %MAX_CNT_STEPS - STEP - 100000      :JMPN(outOfCountersStep)
+    %MAX_CNT_BINARY - CNT_BINARY - 100  :JMPN(outOfCountersBinary)
+    %MAX_CNT_ARITH - CNT_ARITH - 2      :JMPN(outOfCountersArith)
+
+    $ => A                              :MLOAD(txHash)
+
+    ; Check the signature
+    $ => B                              :MLOAD(txR)
+    $ => C                              :MLOAD(txS)
+    $ => D                              :MLOAD(txV), CALL(ecrecover_tx)
+    
+    ; Check result is non-zero
+    checkAndSaveFrom:
+        0 => B
+        A                               :MSTORE(txSrcAddr)
+        $                               :EQ, JMPC(invalidIntrinsicTxSignature)
+
+    /**
+    * C - Verify chainID
+    */
+    
+    $ => A                              :MLOAD(txChainId)
+    $ => B                              :MLOAD(chainID)
+    ; Raise an error if the transaction chain ID does not match the ROM
+    $                                   :EQ,JMPC(endCheckChainId, invalidIntrinsicTxChainId)
+
+    endCheckChainId:
+
+    ;; Handle invalid transactions due to intrinsic checks
+    invalidIntrinsicTxSignature:
+        $${eventLog(onError, intrinsic_invalid_signature)}  :JMP(handleIntrinsicError)
+
+    invalidIntrinsicTxChainId:
+        $${eventLog(onError, intrinsic_invalid_chain_id)}   :JMP(handleIntrinsicError)
+
+    handleIntrinsicError:
+        $ => SR                                             :MLOAD(originSR), JMP(processTxFinished)

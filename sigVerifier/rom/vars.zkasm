@@ -1,0 +1,71 @@
+; Input variables
+VAR GLOBAL oldNumBatch ; Previous batch processed
+VAR GLOBAL batchHashData  ; batchHashData = H_keccak( transactions )
+VAR GLOBAL timestamp  ; Current batch timestamp
+VAR GLOBAL chainID ; Current batch chain id
+VAR GLOBAL forkID  ; Fork identifier
+
+; Output variables
+VAR GLOBAL newNumBatch  ; Current batch processed
+
+VAR GLOBAL batchL2DataParsed  ; Number of bytes read when decoding RLP transactions. Computed during RLP loop
+VAR GLOBAL pendingTxs  ; Number of transactions decoded in RLP block
+VAR GLOBAL lastCtxUsed  ; Last context that has been used
+VAR GLOBAL ctxTxToUse  ; First context to be used when processing transactions
+VAR GLOBAL lastHashKIdUsed  ; Last hash address used
+
+VAR GLOBAL batchL2DataLength  ; Transactions bytes read from the input
+VAR GLOBAL batchHashDataId  ; Hash address used when adding bytes to `batchHashData`
+VAR GLOBAL batchHashPos  ; Position for `batchHashData` 
+VAR GLOBAL currentCTX ; keeps track of the context used
+
+VAR GLOBAL cntKeccakPreProcess  ; Number of keccak counters needed to finish the batch
+
+VAR GLOBAL originSR  ; State root before processing each transaction
+VAR GLOBAL batchSR  ; State root before processing any transaction
+
+VAR GLOBAL txRLPLength  ; Length of the transaction RLP list
+VAR GLOBAL txDataRead  ; Auxiliary variable to check transaction 'data' left that needs to be read
+VAR GLOBAL isLoadingRLP  ; Flag to determine if the function is called from RLP loop
+VAR GLOBAL globalCalldataMemoryOffset  ; Auxiliary variable to store current calldata memory offset at calldata CTX's memory
+
+VAR CTX txNonce  ; Transaction parameter: nonce
+VAR CTX effectivePercentageRLP  ; Transaction parameter: effective percentage, decoded from the RLP
+VAR CTX txChainId  ; Transaction parameter: chain ID
+VAR CTX txS  ; Transaction parameter: ECDSA signature value S
+VAR CTX txR  ; Transaction parameter: ECDSA signature value R
+VAR CTX txV  ; Transaction parameter: ECDSA signature value V
+VAR CTX txSrcAddr  ; Address that sends a transaction
+VAR CTX txHash  ; Signed transaction hash
+VAR CTX txCalldataLen  ; Calldata length
+VAR CTX lengthNonce  ; Length for the `nonce` used when computing a new contract address
+VAR CTX initSR ; state-tree once the initial upfront cost is substracted and nonce is increased
+VAR CTX calldataOffset  ; Pointer to previous context calldata offset
+VAR CTX calldataCTX  ; Pointer to context where the calldata is stored
+VAR CTX dataStarts  ; Hash position where the transaction 'data' starts in the batchHashData
+
+VAR GLOBAL tmpVarAArith
+VAR GLOBAL tmpVarBArith
+VAR GLOBAL tmpVarCArith
+VAR GLOBAL tmpVarDArith
+VAR GLOBAL tmpVarEArith
+VAR GLOBAL tmpZkPCArith
+VAR GLOBAL arithA
+VAR GLOBAL arithB
+VAR GLOBAL arithRes1
+VAR GLOBAL arithRes2
+
+VAR GLOBAL tmpSHXZkPC
+VAR GLOBAL tmpSHXZkPC2
+
+VAR GLOBAL tmpVarBSHX
+VAR GLOBAL tmpVarCSHX
+VAR GLOBAL tmpVarDSHX
+VAR GLOBAL tmpVarESHX
+
+VAR GLOBAL result
+
+VAR GLOBAL tmpVarDaddB
+VAR GLOBAL tmpVarBaddB
+VAR GLOBAL tmpZkPCaddB
+VAR GLOBAL auxBytes

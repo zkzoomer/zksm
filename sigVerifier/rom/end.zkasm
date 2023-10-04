@@ -1,0 +1,4 @@
+finalWait:
+    ${beforeLast()}                                     :JMPN(finalWait)
+    ; Set all registers to 0 except inputs: SP (oldNumBatch), GAS (chainID) & CTX (forkID)
+    0 => A, D, E, PC, SR, HASHPOS, RR, RCX              :JMP(start)
