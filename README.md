@@ -21,6 +21,7 @@ These include the following language packages needed for defining a zero-knowled
 This repository contains examples of different zk-State Machines:
 - [mFibonacci](./mfibonacci/): The Multiplicative Fibonacci SM serves as a "Hello World" example for a zkSM design.
 - [generic](./generic/): We expand on the previous example and introduce the basic components of a generic state machine, which can be instantiated with various computations.
+- [sigVerifier](./sigVerifier/): After establishing how we can define conditional statements and loops, we design a state machine that can verify an arbitrary number of signatures.
 
 ## Overview
 Within the [Polygon zkEVM](https://github.com/0xPolygonHermez), transactions are verified by the [zkProver](https://github.com/0xPolygonHermez/zkevm-prover) component, which enforces all rules for a transaction to be valid: constraints that a transaction must follow to be able to modify the state tree or the exit tree.
