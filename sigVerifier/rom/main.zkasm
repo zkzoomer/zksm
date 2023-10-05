@@ -58,7 +58,6 @@ start:
     A + %CALLDATA_RESERVED_CTX => A     :MSTORE(ctxTxToUse) ; Points at first context to be used when processing signatures. We reserve ctx = 1 for calldata
     A                                   :MSTORE(lastCtxUsed)
 
-    ; TODO: what does this count?
     $${var p = 0}
 
     ; Set flag isLoadingRLP to 1
