@@ -1,23 +1,17 @@
 ; Input variables
-VAR GLOBAL oldNumBatch ; Previous batch processed
 VAR GLOBAL batchHashData  ; batchHashData = H_keccak( transactions )
-VAR GLOBAL timestamp  ; Current batch timestamp
-VAR GLOBAL chainID ; Current batch chain id
-VAR GLOBAL forkID  ; Fork identifier
 
 ; Output variables
 VAR GLOBAL newNumBatch  ; Current batch processed
 
 VAR GLOBAL batchL2DataParsed  ; Number of bytes read when decoding RLP transactions. Computed during RLP loop
 VAR GLOBAL pendingTxs  ; Number of transactions decoded in RLP block
-VAR GLOBAL lastCtxUsed  ; Last context that has been used
-VAR GLOBAL ctxTxToUse  ; First context to be used when processing transactions
+VAR GLOBAL txLoopIndex  ; Number of transactions that have been processed
 VAR GLOBAL lastHashKIdUsed  ; Last hash address used
 
 VAR GLOBAL batchL2DataLength  ; Transactions bytes read from the input
 VAR GLOBAL batchHashDataId  ; Hash address used when adding bytes to `batchHashData`
 VAR GLOBAL batchHashPos  ; Position for `batchHashData` 
-VAR GLOBAL currentCTX ; keeps track of the context used
 
 VAR GLOBAL cntKeccakPreProcess  ; Number of keccak counters needed to finish the batch
 

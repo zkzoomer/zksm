@@ -6,7 +6,7 @@ INCLUDE "utils.zkasm"
 INCLUDE "vars.zkasm"
 
 /** Signature Verifier zkROM
-*       A - Load initial registers into memory: oldNumBatch (SP) & chainID (GAS)
+*       A - Load input variables
 *       B - Loop parsing RLP signatures
 *       C - Loop processing signatures
 *       D - Batch computations: assert signatures size, compute batchHashData
@@ -25,19 +25,8 @@ start:
     STEP => A
     0                                   :ASSERT 
 
-    ; Ensure that the version of the ROM is corrrect, ie, equal to the `fork_id` input variable
-    CTX                                 :MSTORE(forkID)
-    CTX - %FORK_ID                      :JMPZ(failAssert)
-
-    ; Store input variables into memory
-    SP                                  :MSTORE(oldNumBatch)
-    GAS                                 :MSTORE(chainID)  ; Assumed to be less than 32 bits
-
-    ${getTimestamp()}                   :MSTORE(timestamp)
+    ; Store the total length of transactions
     ${getTxsLen()}                      :MSTORE(batchL2DataLength) ; Less than 300.000 bytes. Enforced by the smart contract
-
-    ; Increase batch number
-    SP + 1                              :MSTORE(newNumBatch)
 
     /**
     * B - Loop parsing RLP (Recursive-length prefix) signatures
@@ -53,11 +42,6 @@ start:
     0                                   :MSTORE(batchHashPos)  ; Pointer is increased with each signature added 
     E                                   :MSTORE(batchHashDataId)
 
-    ; Set `ctxToUse` to the last context used value
-    $ => A                              :MLOAD(lastCtxUsed)
-    A + %CALLDATA_RESERVED_CTX => A     :MSTORE(ctxTxToUse) ; Points at first context to be used when processing signatures. We reserve ctx = 1 for calldata
-    A                                   :MSTORE(lastCtxUsed)
-
     $${var p = 0}
 
     ; Set flag isLoadingRLP to 1
@@ -65,10 +49,8 @@ start:
 
     ; Execute this loop for each signature in the batch
     txLoopRLP:
-        ; The variable `lastCtxUsed` acts as the loop index
-        ; It is also used to give a specific context number to each signature
-        $ => A                          :MLOAD(lastCtxUsed)
-        A + 1 => CTX                    :MSTORE(lastCtxUsed)
+        $ => A                          :MLOAD(txLoopIndex)
+        A + 1 => CTX                    :MSTORE(txLoopIndex)
 
         ; Get the amount of total data and the amount of data parsed, respectively
         $ => A                          :MLOAD(batchL2DataLength)
@@ -88,13 +70,9 @@ start:
 
     txLoop:
         ; The variable `pendingTxs` acts as the loop index, decrementing by 1 in each iteration
-        $ => A                          :MLOAD(pendingTxs)
+        $ => A                          :MLOAD(pendingTxs), JMP(processTx)
         ; End the loop when all signatures in the batch are already processed
         A - 1                           :MSTORE(pendingTxs), JMPN(processTxsEnd)
-
-        ; Having parsed the batch of signatures, transaction data can now be accessed via zkASM memory opcodes
-        $ => A                          :MLOAD(ctxTxToUse) ; Load first context used by signature
-        A + 1 => CTX                    :MSTORE(ctxTxToUse), JMP(processTx)
 
     ; Restart the loop after a signature has been verified
     processTxFinished:
@@ -124,18 +102,10 @@ start:
 
         $${eventLog(onFinishBatch)}
 
-        /**
-        * F - Finalize execution
-        */
+    /**
+    * F - Finalize execution
+    */
 
-        ; Set output registers as the computation results
-        $ => PC                         :MLOAD(newNumBatch)
-
-        ; Set registers to their initial values
-        $ => CTX                        :MLOAD(forkID)
-        $ => SP                         :MLOAD(oldNumBatch)
-        $ => GAS                        :MLOAD(chainID)
-
-        ; Finalize execution by jumping to the final wait
-        finalizeExecution:
-                                        :JMP(finalWait)
+    ; Finalize execution by jumping to the final wait
+    finalizeExecution:
+                                    :JMP(finalWait)

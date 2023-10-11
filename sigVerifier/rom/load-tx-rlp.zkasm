@@ -110,7 +110,6 @@ loadTx_rlp:
 	dataREAD:
 		; Set calldata offset and CTX
 		$ => D                          :MLOAD(globalCalldataMemoryOffset)
-		%CALLDATA_RESERVED_CTX          :MSTORE(calldataCTX)
 		D * 32                          :MSTORE(calldataOffset)
 		$ => D                          :MLOAD(batchHashPos)
 		D                               :MSTORE(dataStarts)
