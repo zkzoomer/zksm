@@ -1,0 +1,6 @@
+namespace Rom(%N);
+    pol constant CONST0, CONST1, CONST2, CONST3, CONST4, CONST5, CONST6, CONST7;
+    pol constant inA, inB, inC, inROTL_C, inD, inE, inSR, inFREE;
+    pol constant inHASHPOS, inSTEP, inRCX;
+    pol constant inCntArith, inCntBinary, inCntKeccakF;
+    pol constant operations, offset, binOpcode, jmpAddr, elseAddr, line;
