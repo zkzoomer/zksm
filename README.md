@@ -23,6 +23,7 @@ This repository contains examples of different zk-State Machines:
 - [generic](./generic/): We expand on the previous example and introduce the basic components of a generic state machine, which can be instantiated with various computations.
 - [binary](./binary/): We introduce the concept of secondary state machines and how to link them to our main state machine via plookups. We define a secondary state machine to perform binary operations, improving the functionality of our previous generic state machine.
 - [sigVerifier](./sigVerifier/): After establishing how we can define conditional statements, loops, and secondary state machines, we design a state machine that can verify an arbitrary number of ECDSA signatures. Note how this is a fundamental building block when constructing a layer 2. 
+These example serve as a **crash course on designing ZK State Machines** using the Polygon zkEVM stack, and must be followed in the order presented above.
 
 ## Overview
 Within the [Polygon zkEVM](https://github.com/0xPolygonHermez), transactions are verified by the [zkProver](https://github.com/0xPolygonHermez/zkevm-prover) component, which enforces all rules for a transaction to be valid: constraints that a transaction must follow to be able to modify the state tree or the exit tree.
@@ -41,11 +42,10 @@ We use State Machines as they are best suited for **iterative deterministic comp
 - Describe the state transitions as algebraic constraints: rules that every state transition must satisfy.
 - Interpolate between state values to build the polynomials that describe the state machine.
 - Define polynomial identities that all state values must satisfy.
-Which are called the arithmetization steps.
 
 ## State Machine Basics
 A State Machine is composed of **registries** that carry numerical values, called **registry values**, which at any given point constitute the **state** of the State Machine.
 
 A state transition in a SM occurs at every tick of the clock. The SM is defined by the rules that determine how one state transitions to the next one. We can use a SM to execute a deterministic computation, and in turn produce verifiable proofs of its correctness. 
 
-The **execution trace** is the record of all its registry valeus, and is represented as a table, where each row represents a state, and each column represents a variable (that is later encoded into a polynomial). Often we deal with a total of $T + 1$ states, where $T + 1$ is a power of $2$.
+The **execution trace** is the record of all its registry values, and is represented as a table: where each row represents a state, and each column represents a variable (that is later encoded into a polynomial). Often we deal with a total of $T + 1$ states, where $T + 1$ is a power of $2$.
