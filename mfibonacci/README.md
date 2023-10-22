@@ -1,6 +1,6 @@
 # Multiplicative Fibonacci State Machine
 
-The multiplicative Fibonacci series (or *mFibonacci*) has the property that the product of every two consecutive members, $a_{i-1}$ and $a_i$, gives the value of the next member, $a_{i+1}$. Our goal will be to prove the set of initial values, $a_0$ and $a_1$, that result in a given $a_n$, the $n$th member of the mFibonacci series.
+The multiplicative Fibonacci series (or *mFibonacci*) has the property that the product of every two consecutive members, $a_{i-1}$ and $a_i$, gives the value of the next member, $a_{i+1}$. Our goal will be to prove knowledge of a set of initial values, $a_0$ and $a_1$, that result in a given $a_n$, the $n$-th member of the mFibonacci series.
 
 ## Defining a State Machine
 
