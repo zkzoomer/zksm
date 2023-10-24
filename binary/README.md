@@ -10,13 +10,15 @@ Instead of executing these operations on its own, the Main SM will delegate the 
 
 The binary operations supported are `ADD`, `SUB`, `LT`, `SLT`, `EQ`, `AND`, `OR`, `XOR`, and `NOT`. These are all 256-bit operations, which are internally processed using 8 registries with 32-bit input/output capacity each. We use an opcode to select which of the binary operations is being selected.
 
-The 256-bit numbers are split into 8 different registries according to:
+Note how all these binary operations are natively supported by the [zkASM](https://github.com/0xPolygonHermez/zkasmcom) language. The 256-bit numbers are split into 8 different registries according to:
 
 $$
 \textbf{a} = a_{31}\cdot(2^8)^{31} \,+\, a_{30}\cdot(2^8)^{30} \,+\,...\,+\,a_{1}\cdot2^8= \sum_{i=31}^{0} a_i \cdot (2^8) ^i
 $$
 
-Where $a_i$ is a byte that can take values between $0$ and $2^8 - 1$. Operations are carried out differently depending on the opcode being used.
+Where $a_i$ is a byte that can take values between $0$ and $2^8 - 1$. 
+
+Operations are verified differently depending on the opcode being used, which is all covered inside the [`binary.pil`](./pil/binary.pil) file. The general process behind verifying each of these is covered in the section below.
 
 #### Binary Operations
 
