@@ -47,6 +47,7 @@ This repository serves as a **crash course on designing ZK State Machines** usin
 
 - [mFibonacci](./mfibonacci/): The Multiplicative Fibonacci SM serves as a "Hello World" example for a zkSM design.
 - [generic](./generic/): We expand on the previous example and introduce the basic components of a generic state machine, which can be instantiated with various computations.
-- [binary](./binary/): We introduce the concept of secondary state machines and how to link them to our main state machine via plookups. We define a secondary state machine to perform binary operations, improving the functionality of our previous generic state machine.
+- [binary](./binary/): We introduce the concept of secondary state machines and how to link them to our main state machine via plookups. We define a secondary state machine to perform binary operations, improving the functionality of our previous generic state machine and also extending on its conditional execution capabilities.
+- [hashing](./hashing): We design a state machine that can encode all inputs that are sent to it into a single value using a hash function. We also take the opportunity to introduce recursive verification of state machine proofs, compressing and aggregating several of these proofs to arrive at a single final proof.
 - [sigVerifier](./sigVerifier/): After establishing how we can define conditional statements, loops, and secondary state machines, we design a state machine that can verify an arbitrary number of ECDSA signatures. Note how this is a fundamental building block when constructing a layer 2. 
-
+- [storage](./storage): Another fundamental building block when constructing a layer 2, we design and implement a Merkle-tree based storage model.
