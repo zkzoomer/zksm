@@ -1,10 +1,10 @@
 # Introduction to Secondary State Machines
 
-We will look to extend on the definition of our [Generic State Machine](../generic/) by expanding the kinds of computations it can perform. To this end, we will define a secondary state machine that will perform a series of binary operations (`ADD`, `SUB`, `LT`, `SLT`, `EQ`, `AND`, `OR`, `XOR`, and `NOT`) over 256-bit numbers. 
+We will look to extend on the definition of our [Generic State Machine](../generic/) by expanding the kinds of computations it can perform. To this end, we will define a secondary state machine that will perform a series of binary operations (`ADD`, `SUB`, `LT`, `SLT`, `EQ`, `AND`, `OR`, `XOR`, and `NOT`) over 256-bit numbers. This extended generic state machine will also receive instructions in the form of programs written in [zkASM](https://github.com/0xPolygonHermez/zkasmcom), and carry out state transitions at every clock cycle according to these instructions.
 
-This extended generic state machine will also receive instructions in the form of programs written in [zkASM](https://github.com/0xPolygonHermez/zkasmcom), and carry out state transitions at every clock cycle according to these instructions.
+Instead of executing these operations on its own, the Main SM will delegate the verification of the binary operations to the secondary binary state machine. The two input values will be the ones stored inthe $A$ and $B$ registries. This architecture is similar to that one found in the [Polygon zkEVM](https://github.com/0xpolygonhermez), where the Binary SM is one of the six secondary state machines receiving instructions from the Main SM. 
 
-Instead of executing these operations on its own, the Main SM will delegate the verification of the binary operations to the secondary binary state machine.
+For any secondary state machine we distinguish between two parts: an executor, tasked with filling the values of the execution trace, and an internal Binary SM PIL program, which establishes a set of verification rules.
 
 ## The Binary State Machine
 
@@ -22,7 +22,13 @@ Operations are verified differently depending on the opcode being used, which is
 
 #### Binary Operations
 
-These correspond to the `AND`, `OR`, `XOR`, and `NOT` operations, which are carried out on a bit-by-bit basis: no use of a carry value is needed.
+These correspond to the 
+- `AND`, a bit-wise $AND$ of two numbers, 
+- `OR`, a bit-wise $OR$ of two numbers,
+- `XOR`, a bit-wise $XOR$ of two numbers, and 
+- `NOT`, a bit-wise $NOT$ of a binary number, 
+
+operations, which are carried out on a bit-by-bit basis: no use of a carry value is needed.
 
 The actual computation is carried out using byte-wise plookup tables, which contain all possible results for each combination of two bytes, as can be seen in the table below:
 
@@ -38,11 +44,11 @@ The actual computation is carried out using byte-wise plookup tables, which cont
 
 Using the [polynomial identity language](https://github.com/0xPolygonHermez/pilcom) we can link the main state machine to this table by use of a plookup argument.
 
-Note that the `NOT` operation is not directly supported, and can instead be implemented by applying the `XOR` opcode on our value with `0xFF...FF`.
+Note that the `NOT` operation is not directly supported, and can instead be implemented by applying the `XOR` operation on the given 256-bit value and `0xFF...FF`.
 
 #### Addition Operation (`AND`)
 
-To verify an addition, we need to make use of a `carry` value that will _carry_ information from one register to the next. This is done to avoid integer overflow between operations. As an example:
+This operation adds two 256-bit numbers. To verify an addition, we need to make use of a `carry` value that will _carry_ information from one register to the next. This is done to avoid integer overflow between operations. As an example:
 
 $$
     a = 0xFF, b = 0x01 \Rightarrow  c = a + b = 0xFF + 0x01 = 0x100 \Rightarrow c = 0x00, \textrm{carry} = 0x01
@@ -63,35 +69,74 @@ We will use a plookup table with the result of the addition operation, both the 
 | 65535 |  `0xFF`  |  `0xFE`  |    `0x01`    |   `0xFD`   |
 | 65536 |  `0xFF`  |  `0xFF`  |    `0x01`    |   `0xFE`   |
 
+Note that, since we use [two's complement notation](https://en.wikipedia.org/wiki/Two's_complement), this binary sum can be used for both signed and unsigned integers.
 
+To see how this table is used in practice, we will consider first the example of adding together two 2-byte numbers, $\textbf{a} = (a_1, a_0)$ and $\textbf{b} = (b_1, b_0)$. This process can later be extended to our 32-byte case: we go byte by byte, starting on the least significant and ending at the most significant.
+
+We will first add the least significant byte, $a_1 + b_1$, and then the most significant byte, $a_2 + b_2$. We now distinguish several possible cases:
+
+* If $a_1 + b_1 < 2^8$ and $a_2 + b_2 < 2^8$ then the result of our sum is simply:
+    $$
+        \textbf{a} + \textbf{b} = (a_2 + b_2, a_1 + b_1)
+    $$
+
+* If $a_1 + b_1 < 2^8$ but $a_2 + b_2 \geq 2^8$ then we will need an extra byte to represent our result, and so we have:
+    $$
+        a_2 + b_2 = 1 \cdot 2^8 + c_2 \, \rightarrow \, \textbf{a} + \textbf{b} = (1, c_2, a_1 + b_1)
+    $$
+
+* If $a_1 + b_1 \geq 2^8$ then we have that:
+    $$
+        a_1 + b_1 = 1 \cdot 2^8 + c_1 \, \rightarrow \, \textbf{a} + \textbf{b} = (a_2 + b_2 + 1) \cdot 2^8 + c_1
+    $$
+    for which we will consider the following two scenarios:
+
+    - If $c_2 = a_2 + b_2 + 1 < 2^8$ then we simply have that:
+        $$
+            \textbf{a} + \textbf{b} = (c_2, c_1)
+        $$
+    - If $a_2 + b_2 + 1 \geq 2^8$ then we define the sum as:
+        $$
+            a_2 + b_2 + 1 = 1 \cdot 2^8 + c_2
+        $$
+        and the byte decomposition will finally be:
+        $$
+            \textbf{a} + \textbf{b} = (1, c_2, c_1)
+        $$
 
 #### Subtraction Operation (`SUB`)
 
-The subtraction operation is first refactored so that it has a similar structure to the one from the addition operation, and can be carried out in a similar way. <!-- This refactoring is as follows: -->
+This operation computes the difference between two 256-bit numbers. The subtraction operation is first refactored so that it has a similar structure to the one from the addition operation, and can be carried out in a similar way. 
 
-<!-- // TODO: explain refactoring operation being done + example -->
+Given $a_i$ and $b_i$, the byte representations of $\textbf{a}$ and $\textbf{b}$. For our byte-by-byte iteration, we are checking if $a_i - b_i - \textrm{carry} \geq 0$. We have two possible cases:
+
+- If $a_i - \textrm{carry} \geq b_i$, then $a_i - b_i - \textrm{carry}$ gives us the $i$-th byte of $a - b$.
+- If $a_i - \textrm{carry} < b_i$, then we compute the $i$-th byte as:
+    $$
+        2^8 - b_i + a_i - \textrm{carry} = 255 - b_i + a_i - \textrm{carry} + 1
+    $$
 
 #### Equality Operation (`EQ`)
 
-The result of the equality operation between two values, $a$ and $b$, is $c = 1$, in the case that $a = b$, and $c = 0$ otherwise.
+This operation checks if two 256-bit numbers are equal. The result of the equality between two values, $a$ and $b$, is $c = 1$, in the case that $a = b$, and $c = 0$ otherwise.
 
-This operation is carried out in single-byte chunks, for a total of 32 such chunks. We start by setting $c = 1$ and then we compare the first two single-byte chunks, $a_0$ and $b_0$, against each other using a plookup table. The process is as follows: 
+We carry out this operation in single-byte chunks, for a total of 32 such chunks. We start by setting $c = 1$ and then we compare the first two single-byte chunks, $a_0$ and $b_0$, against each other using a plookup table. The process is as follows: 
 - If $a_i = b_i$, we keep the carry value from the previous step.
 - If $a_i \neq b_i$, we set $carry = 0$. 
 At the final iteration we will have that $c = 1$ if and only if $a = b$.
 
 #### Inequality Operation (`LT`)
 
-The result of the inequality operation between two values, $a$ and $b$, is $c = 1$, in the case that $a < b$, and $c = 0$ otherwise.
+This operation checks if a 256-bit number is smaller than another 256-bit number. The result of the inequality between two values, $a$ and $b$, is $c = 1$, in the case that $a < b$, and $c = 0$ otherwise.
 
-This operation is also carried out in single-byte chunks, for a total of 32 such chunks, and iterating from the least significant byte towards the most significant byte. We again start by setting $c = 1$ and then we compare the first two single-byte chunks, $a_0$ and $b_0$ against each other using a plookup table. The process is as follows: 
+We also carry out this operation in single-byte chunks, for a total of 32 such chunks, and iterating from the least significant byte towards the most significant byte. We again start by setting $c = 1$ and then we compare the first two single-byte chunks, $a_0$ and $b_0$ against each other using a plookup table. The process is as follows: 
 - If $a_i < b_i$, we leave the carry value unchanged, $carry = 1$. If we are on the final iteration (most significant byte), we set $c = 1$.
 - If $a_i = b_i$, we keep the carry value from the previous step. If we are on the final iteration (most significant byte), we set $c = carry$.
 - If $a_i > b_i$, we set $carry = 0$. If we are on the final iteration (most significant byte), we set $c = 0$. 
 
 #### Signed Inequality Operation (`SLT`)
 
-The result of the signed inequality operation between two values, $a$ and $b$, is $c = 1$, in the case that $a < b$, and $c = 0$ otherwise. Note that both $a$ and/or $b$ can be either positive or negative values. We use [two's complement notation](https://en.wikipedia.org/wiki/Two's_complement) to define negative numbers as follows: 
+This operation checks if a 256-bit number is smaller than another 256-bit number, but takes into consideration the respective signs of the numbers. As such, we must take into account the most significant bit, which acts as the sign. The result of the signed inequality between two values, $a$ and $b$, is $c = 1$, in the case that $a < b$, and $c = 0$ otherwise. Note that both $a$ and/or $b$ can be either positive or negative values. We use [two's complement notation](https://en.wikipedia.org/wiki/Two's_complement) to define negative numbers as follows: 
 
 | Binary | Integer |
 |--------|---------|
@@ -109,3 +154,33 @@ This operation is also carried out in single-byte chunks, for a total of 31 such
 - If $sgn(a) = 1$ and $sgn(b) = 0$, then we have that $a < b$ and thus we set $c = 1$.
 - If $sgn(a) = 0$ and $sgn(b) = 1$, then we have that $a > b$ and thus we set $c = 0$.
 - If $sgn(a) = sgn(b)$, then we output the result of the final iteration of the inequality operation that was carried out. Note how the result is valid when dealing with both positive and negative numbers, as can be seen in the two's complement notation table above.
+
+## Constraint Design for the Binary State Machine
+
+Each operation verified by our Binary State Machine has an opcode associated with it, as shown in the table below:
+
+| Operation | Opcode |
+|-----------|--------|
+|   `AND`   |    0   |
+|   `SUB`   |    1   |
+|    `LT`   |    2   |
+|   `SLT`   |    3   |
+|    `EQ`   |    4   |
+|   `AND`   |    5   |
+|    `OR`   |    6   |
+|   `XOR`   |    7   |
+|   `NOP`   |    *   |
+
+When no binary operation is being carried out, the Binary SM operation is considered to be under `NOP` -- No Operation. Any opcode not covered in the table above can be used to represent this.
+
+As we have seen from the descriptions of all the opcodes, the Binary State Machine internally uses plookups of bytes for all the possible input and output byte combinations for all of the binary operations:
+
+$$
+    \textrm{byte}_{in0} \, \star \, \textrm{byte}_{in1} = \textrm{byte}_{out}
+$$
+
+where $\star$ is one of the possible operations. Since we are dealing with 256-bit values, these operations are carried out in cycles of 32 steps. Internally, these 256-bit values are represented using a total of 8 registries, each 32-bits in capacity, as was covered earlier. The Main SM will check on the result of the computation of the Binary SM via a Plookup that is only performed when the cycles of the Binary SM are completed.
+
+
+## Binary Instructions in the Main State Machine
+The Main State Machine delegates any binary instructions to the Binary State Machine. These are operations between two input values, always taken from the $A$ and $B$ registries (which, as covered, are made up of 8 different 32-bit registries each, for a total of 256-bits per registry). The Binary SM executes and verifies the operation, and later _injects_ the result to the $OP$ registry. If the result exceeds the allocated 256-bit value, it also updates the $\textrm{carry}$ registry, setting it to $1$.
