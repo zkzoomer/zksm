@@ -1,0 +1,217 @@
+include "binary.pil";
+include "config.pil";
+include "global.pil";
+include "rom.pil";
+
+namespace Main(%N);
+
+    /**
+    *
+    * Polynomial definitions
+    *
+    */
+
+    ////////// State Polynomials
+
+    // A Register
+    pol commit A7, A6, A5, A4, A3, A2, A1;
+    pol commit A0;
+
+    // B Register
+    pol commit B7, B6, B5, B4, B3, B2, B1;
+    pol commit B0;
+
+    // C Register
+    pol commit C7, C6, C5, C4, C3, C2, C1;
+    pol commit C0;
+
+    // D Register
+    pol commit D7, D6, D5, D4, D3, D2, D1;
+    pol commit D0;
+
+    // Program counter -- which instruction is being ran in the ROM
+    pol commit zkPC;                  
+
+    //////////  Instruction related polynomials
+    pol commit CONST7, CONST6, CONST5, CONST4, CONST3, CONST2, CONST1, CONST0;
+    pol commit FREE7, FREE6, FREE5, FREE4, FREE3, FREE2, FREE1, FREE0;
+    pol commit inA, inB, inC, inD, inFREE;
+    pol commit setA, setB, setC, setD;
+    pol commit JMP, JMPN, JMPC, JMPZ;
+    pol commit carry;
+
+    ////////// Binary operations
+    pol commit bin, binOpcode;
+
+    ////////// Intermediary commit polynomials
+    pol commit isNeg;
+
+    ////////// Counters
+    pol commit cntBinary, inCntBinary;
+
+    /**
+    *
+    * Intermediary calculations and checks
+    *
+    */
+
+    ////////// Selectors `op`
+    // Acts as an intermediate carrier of the computation being executed
+    pol op0 = A0 * inA + B0 * inB + C0 * inC + D0 * inD + FREE0 * inFREE + CONST0;
+    pol op1 = A1 * inA + B1 * inB + C1 * inC + D1 * inD + FREE1 * inFREE + CONST1;
+    pol op2 = A2 * inA + B2 * inB + C2 * inC + D2 * inD + FREE2 * inFREE + CONST2;
+    pol op3 = A3 * inA + B3 * inB + C3 * inC + D3 * inD + FREE3 * inFREE + CONST3;
+    pol op4 = A4 * inA + B4 * inB + C4 * inC + D4 * inD + FREE4 * inFREE + CONST4;
+    pol op5 = A5 * inA + B5 * inB + C5 * inC + D5 * inD + FREE5 * inFREE + CONST5;
+    pol op6 = A6 * inA + B6 * inB + C6 * inC + D6 * inD + FREE6 * inFREE + CONST6;
+    pol op7 = A7 * inA + B7 * inB + C7 * inC + D7 * inD + FREE7 * inFREE + CONST7;
+
+    ////////// `isNeg`
+    pol commit lJmpnCondValue;
+    pol jmpnCondValue = JMPN * (isNeg * 2**32 + op0);
+    isNeg * (1 - isNeg) = 0;
+
+    lJmpnCondValue in Global.STEP;
+
+    pol commit hJmpnCondValueBit[9];
+
+    hJmpnCondValueBit[8] * (1 - hJmpnCondValueBit[8]) = 0;
+    hJmpnCondValueBit[7] * (1 - hJmpnCondValueBit[7]) = 0;
+    hJmpnCondValueBit[6] * (1 - hJmpnCondValueBit[6]) = 0;
+    hJmpnCondValueBit[5] * (1 - hJmpnCondValueBit[5]) = 0;
+    hJmpnCondValueBit[4] * (1 - hJmpnCondValueBit[4]) = 0;
+    hJmpnCondValueBit[3] * (1 - hJmpnCondValueBit[3]) = 0;
+    hJmpnCondValueBit[2] * (1 - hJmpnCondValueBit[2]) = 0;
+    hJmpnCondValueBit[1] * (1 - hJmpnCondValueBit[1]) = 0;
+    hJmpnCondValueBit[0] * (1 - hJmpnCondValueBit[0]) = 0;
+
+    jmpnCondValue = 2**31 * hJmpnCondValueBit[8] + 2**30 * hJmpnCondValueBit[7] + 2**29 * hJmpnCondValueBit[6] + 2**28 * hJmpnCondValueBit[5] +
+                    2**27 * hJmpnCondValueBit[4] + 2**26 * hJmpnCondValueBit[3] + 2**25 * hJmpnCondValueBit[2] + 2**24 * hJmpnCondValueBit[1] +
+                    2**23 * hJmpnCondValueBit[0] + lJmpnCondValue;
+
+    ////////// `op0` zero check
+    pol commit op0Inv;
+    pol op0IsZero = 1 - op0 * op0Inv;
+    op0IsZero * op0 = 0;
+
+    /**
+    *
+    * Compute the new state -- transition constraints
+    *
+    */
+
+    A0' = setA * (op0 - A0) + A0;
+    A1' = setA * (op1 - A1) + A1;
+    A2' = setA * (op2 - A2) + A2;
+    A3' = setA * (op3 - A3) + A3;
+    A4' = setA * (op4 - A4) + A4;
+    A5' = setA * (op5 - A5) + A5;
+    A6' = setA * (op6 - A6) + A6;
+    A7' = setA * (op7 - A7) + A7;
+
+    B0' = setB * (op0 - B0) + B0;
+    B1' = setB * (op1 - B1) + B1;
+    B2' = setB * (op2 - B2) + B2;
+    B3' = setB * (op3 - B3) + B3;
+    B4' = setB * (op4 - B4) + B4;
+    B5' = setB * (op5 - B5) + B5;
+    B6' = setB * (op6 - B6) + B6;
+    B7' = setB * (op7 - B7) + B7;
+
+    C0' = setC * (op0 - C0) + C0;
+    C1' = setC * (op1 - C1) + C1;
+    C2' = setC * (op2 - C2) + C2;
+    C3' = setC * (op3 - C3) + C3;
+    C4' = setC * (op4 - C4) + C4;
+    C5' = setC * (op5 - C5) + C5;
+    C6' = setC * (op6 - C6) + C6;
+    C7' = setC * (op7 - C7) + C7;
+
+    D0' = setD * (op0 - D0) + D0;
+    D1' = setD * (op1 - D1) + D1;
+    D2' = setD * (op2 - D2) + D2;
+    D3' = setD * (op3 - D3) + D3;
+    D4' = setD * (op4 - D4) + D4;
+    D5' = setD * (op5 - D5) + D5;
+    D6' = setD * (op6 - D6) + D6;
+    D7' = setD * (op7 - D7) + D7;
+
+    pol doJMP = JMPN * isNeg + JMP + JMPC * carry + JMPZ * op0IsZero;
+    pol elseJMP = JMPN * (1 - isNeg) + JMPC * (1 - carry) + JMPZ * (1 - op0IsZero);
+
+    pol commit jmpAddr;
+    pol commit elseAddr;
+    pol commit useJmpAddr;
+    pol commit useElseAddr;
+
+    ////////// ROM/Zkasm constraint
+    pol finalJmpAddr = useJmpAddr * jmpAddr;
+    pol nextNoJmpZkPC = zkPC + 1;
+    pol finalElseAddr = useElseAddr * (elseAddr - nextNoJmpZkPC) + nextNoJmpZkPC;
+
+    // Program counter constraint
+    zkPC' = doJMP * (finalJmpAddr - nextNoJmpZkPC) + elseJMP * (finalElseAddr - nextNoJmpZkPC) + nextNoJmpZkPC;
+    zkPC * Global.L1 = 0;
+
+    /**
+    *
+    * ROM Plookpups
+    *
+    * Code generated with:
+    * node tools/pil_pol_table/bits_compose.js "bin,JMP,JMPC,JMPN,setA,setB,setC,setD,useJmpAddr,JMPZ,useElseAddr" -b
+    * inside https://github.com/0xPolygonHermez/zkevm-proverjs
+    *
+    */
+
+    // Operation being done is encoded within operation -- can be combination of many things
+    pol operations =
+          2**0  * bin           + 2**1  * JMP           + 2**2  * JMPC          + 2**3  * JMPN
+        + 2**4  * setA          + 2**5  * setB          + 2**6  * setC          + 2**7  * setD
+        + 2**8  * useJmpAddr    + 2**9  * JMPZ          + 2**10 * useElseAddr;
+
+    (1 - bin) * bin = 0;
+    (1 - JMP) * JMP = 0;
+    (1 - JMPC) * JMPC = 0;
+    (1 - JMPN) * JMPN = 0;
+    (1 - setA) * setA = 0;
+    (1 - setB) * setB = 0;
+    (1 - setC) * setC = 0;
+    (1 - setD) * setD = 0;
+    (1 - useJmpAddr) * useJmpAddr = 0;
+    (1 - JMPZ) * JMPZ = 0;
+    (1 - useElseAddr) * useElseAddr = 0;
+
+    {
+        CONST0, CONST1, CONST2, CONST3, CONST4, CONST5, CONST6, CONST7,
+        inA, inB, inC, inD, inFREE,
+        inCntBinary,
+        operations, binOpcode, jmpAddr, elseAddr, zkPC
+    } in {
+        Rom.CONST0, Rom.CONST1, Rom.CONST2, Rom.CONST3, Rom.CONST4, Rom.CONST5, Rom.CONST6, Rom.CONST7,
+        Rom.inA, Rom.inB, Rom.inC, Rom.inD, Rom.inFREE,
+        Rom.inCntBinary,
+        Rom.operations, Rom.binOpcode, Rom.jmpAddr, Rom.elseAddr, Rom.line
+    };
+
+    /**
+    *
+    * Binary Plookpups
+    *
+    */
+
+    bin {
+        binOpcode,
+        A0, A1, A2, A3, A4, A5, A6, A7,
+        B0, B1, B2, B3, B4, B5, B6, B7,
+        op0, op1, op2, op3, op4, op5, op6, op7,
+        carry
+    } is
+    Binary.resultBinOp {
+        Binary.lOpcode,
+        Binary.a[0], Binary.a[1], Binary.a[2], Binary.a[3], Binary.a[4], Binary.a[5], Binary.a[6], Binary.a[7],
+        Binary.b[0], Binary.b[1], Binary.b[2], Binary.b[3], Binary.b[4], Binary.b[5], Binary.b[6], Binary.b[7],
+        Binary.c[0], Binary.c[1], Binary.c[2], Binary.c[3], Binary.c[4], Binary.c[5], Binary.c[6], Binary.c[7],
+        Binary.lCout
+    };
+
+    cntBinary' = cntBinary * (1 - Global.L1) + bin;
