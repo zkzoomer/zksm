@@ -1,0 +1,21 @@
+start:
+    ${ getAFreeInput() } => A
+    ${ getAFreeInput() } => B
+    $ => A                      :ADD
+    ${ getAFreeInput() } => B
+    $ => C                      :EQ
+    C                           :JMPZ(equal, notEqual)
+
+equal:                     
+    0 => B
+    1 => A                      :JMP(finalizeExecution)
+
+notEqual:
+    $ => B                      :SUB
+    0 => A                      :JMP(finalizeExecution)
+
+; Finalize execution by jumping to the final wait
+finalizeExecution:
+    ${beforeLast()}                                     :JMPN(finalizeExecution)
+    ; Set all registers to 0
+    0 => A, B, C, D, E, SR, HASHPOS, RCX                :JMP(start)
