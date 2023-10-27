@@ -155,7 +155,7 @@ This operation is also carried out in single-byte chunks, for a total of 31 such
 - If $sgn(a) = 0$ and $sgn(b) = 1$, then we have that $a > b$ and thus we set $c = 0$.
 - If $sgn(a) = sgn(b)$, then we output the result of the final iteration of the inequality operation that was carried out. Note how the result is valid when dealing with both positive and negative numbers, as can be seen in the two's complement notation table above.
 
-## Constraint Design for the Binary State Machine
+### Constraint Design for the Binary State Machine
 
 Each operation verified by our Binary State Machine has an opcode associated with it, as shown in the table below:
 
@@ -181,6 +181,108 @@ $$
 
 where $\star$ is one of the possible operations. Since we are dealing with 256-bit values, these operations are carried out in cycles of 32 steps. Internally, these 256-bit values are represented using a total of 8 registries, each 32-bits in capacity, as was covered earlier. The Main SM will check on the result of the computation of the Binary SM via a Plookup that is only performed when the cycles of the Binary SM are completed.
 
+## The Main State Machine
 
-## Binary Instructions in the Main State Machine
 The Main State Machine delegates any binary instructions to the Binary State Machine. These are operations between two input values, always taken from the $A$ and $B$ registries (which, as covered, are made up of 8 different 32-bit registries each, for a total of 256-bits per registry). The Binary SM executes and verifies the operation, and later _injects_ the result to the $OP$ registry. If the result exceeds the allocated 256-bit value, it also updates the $\textrm{carry}$ registry, setting it to $1$.
+
+### Extending the Program Counter -- $JMP$, $JMPN$, $JMPC$, and $JPMZ$ 
+
+With this example, we will also look into extending the functionality of the program counter by introducing two new jump instructions, adding up to a total of four:
+
+- `JMP(addr)`, a jump to a given line of the zkASM program, specified by the `addr` argument.
+- `JMPN(addr)`, a jump to a given line of the zkASM program, specified by the `addr` argument, if a specified register contains a negative number.
+- `JMPC(addr)`, a jump to a given line of the zkASM program, specified by the `addr` argument, if a specified condition is evaluated as true. It is used along the comparative binary instructions `EQ`, `LT`, and `SLT`.
+- `JPMZ(addr)`, a conditional jump to a given line of the zkASM program, specified by the `addr` argument, if a specified register contains a $0$.
+
+Additionally, the last three of these instructions will also incorporate an `elseAddr` argument, where the execution will jump to if the given condition is not met. We will need to define a way to keep track of the correct line of the assembly program to be executed next, represented by the $zkPC$ register in the Main State Machine. This way we ensure only valid jumps are being performed within the zkASM program, while via the [ROM Plookup argument](../generic/README.md#rom-plookup) we ensure only valid lines of the zkASM program are being executed.
+
+#### Constraining $JMP$
+
+We will use the following identity to keep track of the correct line of the assembly program to be executed next:
+
+$$
+    zkPC' = (zkPC + 1) + JMP \cdot (addr - (zkPC + 1))
+$$
+
+#### Constraining $JMPN$
+
+The `JMPC(addr)` instruction will be executed only on condition that $op$ is negative, and so we will introduce the flag $isNeg$:
+
+<!-- // TODO: explain how the `isNeg` flag is defined -->
+
+
+We will use the following identity to keep track of the correct line of the assembly program to be executed next:
+
+$$
+    zkPC' = (zkPC + 1) + (JMPN \cdot isNeg) \cdot (addr - (zkPC + 1))
+$$
+
+
+#### Constraining $JMPC$
+
+The `JMPC(addr)` instruction will be executed only on condition that the $carry$ value is $1$:
+
+$$
+    zkPC' = (zkPC + 1) + (JMPC \cdot carry) \cdot (addr - (zkPC + 1))
+$$
+
+#### Constraining $JMPZ$
+
+The `JMPZ(addr)` instruction will be executed only on condition that $op$ is zero, and so we will introduce the flag $isZero$:
+
+$$
+    isZero := (1 - op \cdot invOp),
+$$
+
+$$
+    isZero \cdot op = 0,
+$$
+
+$$
+    doJMP := JMPZ \cdot isZero + JMP,
+$$
+
+Where we define $invOp$ to represent $op^{-1}$, which is set to either the inverse of $op$, or, if $op = 0$, a random field element $\alpha$. We will use the following identity to keep track of the correct line of the assembly program to be executed next:
+
+$$
+    zkPC' = (zkPC + 1) + (JMPZ \cdot isZero) \cdot (addr - (zkPC + 1))
+$$
+
+#### Constraining the Program Counter 
+
+To support the functionality for the program counter that we described above, we will need to jointly constrain $JMP$, $JMPN$, $JMPC$, and $JMPZ$, as well as supporting an additional `elseAddr` argument. Note that, since we are using 8 registries to represent 256-bit numbers, we use the value in the least significant register, $op0$, when defining these conditions.
+
+Since the polynomials $JMP$, $JMPN$, $JMPC$, and $JMPZ$ cannot all be true at the same time, as constrained by the ROM Plookup, we can define a polynomial to encode whether or not to do a conditional jump, $doJMP$, as:
+
+$$
+    doJMP = JMP + JMPN \cdot isNeg + JMPC \cdot carry + JMPZ \cdot op0IsZero
+$$
+
+Similarly, for cases when the given condition is _not_ met, we can define a polynomial to encode whether or not to do a jump when the given condition is _not_ met, $elseJMP$, as:
+
+$$
+    elseJMP = JMPN \cdot (1 - isNeg) + JMPC \cdot (1 - carry) + JMPZ \cdot (1 - op0IsZero)
+$$
+
+We will also need to specify:
+
+- Whether we do the jump if the condition is met, $useJmpAddr$, and where is this jump made to, $jmpAddr$.
+- Whether we do the jump if the condition is _not_ met, $useElseAddr$, and where is this jump made to, $useElseAddr$.
+
+These polynomials get verified as part of the ROM Plookup. 
+
+So, to recap, we have defined a polynomial that tells us if the given condition is met, $doJMP$, or not met, $elseJMP$. We have also specified if the line of our ROM defines a jump (via $useJmpAddr$ when the condition is met, $useElseAddr$ otherwise) and to where (via $jmpAddr$ if the condition is met, $useElseAddr$ otherwise). We can now join all these together to arrive at a final expression that constains our program counter:
+
+$$
+    zkPC' = doJMP * (useJmpAddr * jmpAddr - (zkPC + 1)) + elseJMP * (useElseAddr * elseAddr - (zkPC + 1)) + zkPC + 1;
+$$
+
+Where $zkPC'$ represents the line that will be executed on the next row of the execution trace. We will verify, via the ROM Plookup, that the line of the ROM being executed, $zkPC$, does indeed exists within our ROM. Note that in our PIL progra we will have to _decompose_ this expression, as the language does not support polynomials of degree $> 2$. 
+
+We will also constrain that this program counter, $zkPC$, starts at the first line of our ROM by enforcing that:
+
+$$
+    zkPC \cdot \textrm{GLOBAL.L1} = 0
+$$
+
+Given that $\textrm{GLOBAL.L1} = [1, 0, 0, ..., 0]$.
