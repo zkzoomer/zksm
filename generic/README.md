@@ -212,7 +212,7 @@ finalWait:  ; final loop for the cycle
 
 So until we are on the second to last line in the execution trace, the program will keep looping, and jump back to the start in the final line. By using these jumps, we create a loop in our execution, so values are retained until the execution trace is in the second-to-last row, achieving cyclicity. The result of the computation is reflected in the last position of the registries.
 
-### Plookup
+### ROM Plookup
 
 Within the zkEVM, the Main SM executor sends various instructions to secondary state machines within the [zkProver](https://github.com/0xPolygonHermez/zkevm-prover). These secondary SM specialize in specific computations, and frequently use [Plookup](https://eprint.iacr.org/2020/315.pdf) to complete tasks mandated by the Main SM executor.
 
