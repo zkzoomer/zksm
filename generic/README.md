@@ -187,9 +187,9 @@ $$
     zkPC' = (zkPC + 1) + doJMP \cdot (addr - (zkPC + 1))
 $$
 
-Where $addr$ is defined as an intermediate polynomial, $addr := offset$, where $offset$ is provided as part of the jump instruction.
+Where $addr$ is defined as an intermediate polynomial, $addr := offset$, where $offset$ is provided as part of the jump instruction. We will define a new polynomial, $invOp$, to represent $op^{-1}$, which is set to either the inverse of $op$, or, if $op = 0$, a random field element $\alpha$.
 
-We will therefore have the following different columns in the execution trace: $zkPC$, $JMP$, $JMPZ$, $invOp$, and $offset$.
+We will therefore have the following different columns in the execution trace: $zkPC$, $JMP$, $JMPZ$, $invOp$, and $offset$. Note how both $JMP$ and $JMPZ$ cannot be both true at the same time, as constrained by the Plookup, defined below.
 
 ### Ending the Program
 
