@@ -155,7 +155,7 @@ $$
 
 #### Constraining the Program Counter -- $JMPZ$
 
-The $JMPZ(addr)$ instruction will be executed only on condition that $op$ is zero, and so we will introduce the flag $isZero$:
+The `JMPZ(addr)` instruction will be executed only on condition that $op$ is zero, and so we will introduce the flag $isZero$:
 
 $$
     isZero = 1 \textrm{ if } op = 0\textrm{, else }isZero = 0\textrm{; and so we have: }isZero \cdot op = 0
