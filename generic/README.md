@@ -142,8 +142,8 @@ In the figure below, we see the resulting state machine, with registries $A$, $B
 >*Source: [Polygon zkEVM Pre-Specs, Generic SM](https://wiki.polygon.technology/docs/zkevm/zkProver/program-counter/#checking-sequence-of-instructions)*
 
 We will also allow two new instructions in zkASM:
-- $JPMZ(addr)$, a conditional jump to the given line.
-- $JMP(addr)$, a jump to the given line.
+- `JMP(addr)`, a jump to a given line of the zkASM program, specified by the `addr` argument.
+- `JPMZ(addr)`, a conditional jump to a given line of the zkASM program, specified by the `addr` argument, if a specified register contains a $0$.
 
 #### Constraining the Program Counter -- $JMP$
 
