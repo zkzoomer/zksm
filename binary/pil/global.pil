@@ -1,4 +1,10 @@
 namespace Global(%N);
     pol constant L1;    // 1, 0, 0, 0, 0
     pol constant STEP;  // 0, 1, 2, 3, ...... N-1
+
+    pol constant BYTE;
+    pol constant BYTE_2A;
+    pol constant CLK32[32];       // [0] = 1, 0:31  (cyclic)
+                                  // [1] = 0, 1, 0:30 (cyclic)
+                                  // [31] = 0:31, 1 (cyclic)
     
