@@ -286,3 +286,11 @@ $$
 $$
 
 Given that $\textrm{GLOBAL.L1} = [1, 0, 0, ..., 0]$.
+
+# Running the State Machine
+
+Running the setup phase: compiling the ROM and generating the constant polynomials:
+
+```
+    node src/main_buildconstants.js -p pil/main.pil -r rom/rom-a.zkasm -o build/zkevm.const
+```
