@@ -92,6 +92,10 @@ async function run() {
         };
     };
 
+    if (!fs.existsSync("./build")){
+        fs.mkdirSync("./build");
+    }
+
     await constPols.saveToFile(outputFile);
 
     console.log("Constants generated succefully!");
