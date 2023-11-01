@@ -2,12 +2,12 @@ const fs = require("fs");
 const tty = require('tty');
 const { compile: compileZkasm } = require("@0xpolygonhermez/zkasmcom");
 const { F1Field } = require("ffjavascript");
+const { FGL } = require("pil-stark");
 const { newConstantPolsArray, compile: compilePil } = require("pilcom");
 
 const binarySM = require("./sm/binary_sm.js");
 const globalSM = require("./sm/global_sm.js");
 const romSM = require("./sm/rom_sm.js");
-const { FGL } = require("pil-stark");
 
 const argv = require("yargs")
     .usage("main_buildconstants -r <rom.json> -o <constant.bin|json> [-p <main.pil>] [-P <pilconfig.json>] [-v]")
