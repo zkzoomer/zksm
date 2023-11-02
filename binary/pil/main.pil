@@ -46,9 +46,6 @@ namespace Main(%N);
     ////////// Intermediary commit polynomials
     pol commit isNeg;
 
-    ////////// Counters
-    pol commit cntBinary, inCntBinary;
-
     /**
     *
     * Intermediary calculations and checks
@@ -185,12 +182,10 @@ namespace Main(%N);
     {
         CONST0, CONST1, CONST2, CONST3, CONST4, CONST5, CONST6, CONST7,
         inA, inB, inC, inD, inFREE,
-        inCntBinary,
         operations, binOpcode, jmpAddr, elseAddr, zkPC
     } in {
         Rom.CONST0, Rom.CONST1, Rom.CONST2, Rom.CONST3, Rom.CONST4, Rom.CONST5, Rom.CONST6, Rom.CONST7,
         Rom.inA, Rom.inB, Rom.inC, Rom.inD, Rom.inFREE,
-        Rom.inCntBinary,
         Rom.operations, Rom.binOpcode, Rom.jmpAddr, Rom.elseAddr, Rom.line
     };
 
@@ -214,6 +209,3 @@ namespace Main(%N);
         Binary.c[0], Binary.c[1], Binary.c[2], Binary.c[3], Binary.c[4], Binary.c[5], Binary.c[6], Binary.c[7],
         Binary.lCout
     };
-
-    // Increase the binary counter only when the Plookup is used
-    cntBinary' = cntBinary * (1 - Global.L1) + bin;
