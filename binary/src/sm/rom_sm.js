@@ -26,9 +26,6 @@ module.exports.buildConstants = async function buildConstants(pols, rom) {
         pols.inC[i] = rom.program[pIndex].inC ? F.e(rom.program[pIndex].inC) : F.zero;
         pols.inD[i] = rom.program[pIndex].inD ? F.e(rom.program[pIndex].inD) : F.zero;
         pols.inFREE[i] = rom.program[pIndex].inFREE ? F.e(rom.program[pIndex].inFREE) : F.zero;
-        pols.inSTEP[i] = rom.program[pIndex].inSTEP ? F.e(rom.program[pIndex].inSTEP) : F.zero;
-
-        pols.inCntBinary[i] = rom.program[pIndex].inCntBinary ? F.e(rom.program[pIndex].inCntBinary) : F.zero;
 
         /*
         *
