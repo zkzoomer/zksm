@@ -68,45 +68,38 @@ namespace Binary(%N);
 
     pol commit useCarry;
     pol commit resultBinOp;
-    pol commit resultValidRange;
 
-    // Constraining `resultBinOp` and `resultValidRange` to be binary values
+    // Constraining `resultBinOp` to be a binary value
     resultBinOp * (1 - resultBinOp) = 0;
-    resultValidRange * (1 - resultValidRange) = 0;
-
-    // Both `resultBinOp` and `resultValidRange` can only be 1 when starting a cycle
+    // `resultBinOp` can only be 1 when starting a new operation cycle
     (1 - RESET) * resultBinOp = 0;
-    (1 - RESET) * resultValidRange = 0;
-    // But both cannot be true at the same time
-    resultValidRange * resultBinOp = 0;
 
     // Opcode can only change when we start a cycle -- start of an operation
     (opcode' - opcode) * (1 - RESET') = 0;
-
 
     cIn' = cOut * (1 - RESET');
 
     lCout' = cOut;
     lOpcode' = opcode;
-
     
     ////////  Plookup
-    // Operation is correct
+    // Least significant byte operation is correct
     {
         0, opcode, freeInA[0], freeInB[0], cIn, 0, freeInC[0], cMiddle
     } in {
         P_LAST, P_OPCODE, Global.BYTE_2A, Global.BYTE, P_CIN, P_USE_CARRY, P_C, P_COUT
     };
 
-    //
+    // Most significant byte operation is correct
     {
-        resultValidRange' + resultBinOp', opcode, freeInA[1], freeInB[1], cMiddle, useCarry ,freeInC[1], cOut
+        resultBinOp', opcode, freeInA[1], freeInB[1], cMiddle, useCarry, freeInC[1], cOut
     } in {
         P_LAST, P_OPCODE, Global.BYTE_2A, Global.BYTE, P_CIN, P_USE_CARRY, P_C, P_COUT
     };
 
     ////////  State transitions
-    // Building 256-bit number -- when RESET is 1 we can add a freeIN to the registry
+    // Building the 256-bit registers (`a` and `b`), 8 bits at a time, from the results of the byte operation
+    // Gets reset back to zero when `RESET` = 1
     a[0]' = a[0] * (1 - RESET) + freeInA[0] * FACTOR[0] + 256 * freeInA[1] * FACTOR[0];
     a[1]' = a[1] * (1 - RESET) + freeInA[0] * FACTOR[1] + 256 * freeInA[1] * FACTOR[1];
     a[2]' = a[2] * (1 - RESET) + freeInA[0] * FACTOR[2] + 256 * freeInA[1] * FACTOR[2];
