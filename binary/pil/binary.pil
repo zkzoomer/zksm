@@ -30,9 +30,6 @@ namespace Binary(%N);
     //  P_USE_CARRY         (1  bits) Carry out
     pol constant P_C, P_COUT, P_USE_CARRY;
 
-    //// Total size
-    //  3 + 1 + 1 + 8 + 8 = 21 bits
-
     ////////  Constant polinomials
     // Used to reset registry values every time the state machine completes a cycle of state transitions 
     // [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, ...] (cyclic)
