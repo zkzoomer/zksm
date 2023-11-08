@@ -4,7 +4,6 @@ include "global.pil";
 include "rom.pil";
 
 namespace Main(%N);
-
     /**
     *
     * Polynomial definitions
