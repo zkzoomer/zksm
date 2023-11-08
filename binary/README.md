@@ -21,8 +21,8 @@ Where $a_i$ is a byte that can take values between $0$ and $2^8 - 1$. We will be
 Operations are verified differently depending on the opcode being used, which is all covered inside the [`binary.pil`](./pil/binary.pil) file. The general scheme is as follows:
 
 - Build and commit to a table that contains **all the possible 8-bit operations supported**: every possible combination of our 8-bit inputs with their corresponding outputs. Since this table is constant, its computation is performed as part of the setup step for our full state machine.
-- Compute all eight 32-bit registry operations by further subdividing each of them into four 8-bit operations: these are linked to each other and are carried out by directly referencing the solution from our Plookup.
-- Join together the eight 32-bit to arrive at the final result.
+- Decompose the full 256-bit operation being carried out into bytes, and verify each byte separately: two per execution trace row for a total of 16 rows per cycle.
+- Select the final result of the binary operation, making it available to the Main SM. 
 
 The general process behind each of these steps is covered in the sections below.
 
@@ -226,7 +226,7 @@ This operation is also carried out in a byte-wise manner. Given $a_i$ and $b_i$,
 - If $sgn(a) = 0$ and $sgn(b) = 1$, then we have that $a > b$ and thus we set $c = 0$.
 - If $sgn(a) = sgn(b)$, then we will have the result of the final iteration of the inequality operation, `LT`. Note how the result is valid when dealing with both positive and negative numbers, as can be seen in the two's complement notation table above.
 
-### Constraint Design for the Binary State Machine
+## Constraint Design for the Binary State Machine
 
 Each operation verified by our Binary State Machine has an opcode associated with it, as shown in the table below:
 
@@ -250,11 +250,19 @@ $$
     \textrm{byte}_{in0} \, \star \, \textrm{byte}_{in1} = \textrm{byte}_{out}
 $$
 
-where $\star$ is one of the possible operations. Since we are dealing with 256-bit values, these operations are carried out in cycles of 32 steps. Internally, these 256-bit values are represented using a total of 8 registries, each 32-bits in capacity, as was covered earlier. The Main SM will check on the result of the computation of the Binary SM via a Plookup that is only performed when the cycles of the Binary SM are completed.
+where $\star$ is one of the possible operations. Internally, these 256-bit values are represented using a total of 8 registries, each 32-bits in capacity, as was covered earlier. The operations are carried out in cycles of 16 steps, with each step verifying two bytes. The final result of the operation is finally reflected on every 17th row, that is, the start of the next operation. The Main SM will check on the result of the computation of the Binary SM via a Plookup that is only performed when the cycles of the Binary SM are completed.
+
+The verification cycle works its way from the least significant byte towards the most significant. As an 8-bit chunk of the operation gets verified, its _contribution_ towards the final values ($a$, $b$, and $c$) gets added up. After the cycle is completed, we will have on the $a$, $b$ and $c$ registers the resulting verified operation: this is the row that is _injected_ into the Main SM via a plookup.
 
 ## The Main State Machine
 
 The Main State Machine delegates any binary instructions to the Binary State Machine. These are operations between two input values, always taken from the $A$ and $B$ registries (which, as covered, are made up of 8 different 32-bit registries each, for a total of 256-bits per registry). The Binary SM executes and verifies the operation, and later _injects_ the result to the $OP$ registry. If the result exceeds the allocated 256-bit value, it also updates the $\textrm{carry}$ registry, setting it to $1$.
+
+---
+> ⚠️ &nbsp; **NOTE**
+>
+> The Main SM uses the results of the binary operation directly, and simply delegates its verification to the Binary SM.
+---
 
 ### Extending the Program Counter — $JMP$, $JMPN$, $JMPC$, and $JPMZ$ 
 
