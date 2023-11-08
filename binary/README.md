@@ -396,15 +396,3 @@ Verifying the PIL execution trace:
 ```
     node ../node_modules/pilcom/src/main_pilverifier.js build/binary.commit -p pil/main.pil -c build/binary.const
 ```
-
-Generating the proof:
-
-```
-    node ../node_modules/pilstark/main_prover.js -m build/binary.commit -c build/binary.const 
-```
-
-Verifying the proof:
-
-```
-
-```
