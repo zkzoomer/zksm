@@ -96,7 +96,6 @@ namespace Binary(%N);
 
     ////////  State transitions
     // Building the 256-bit registers (`a` and `b`), 8 bits at a time, from the results of the byte operation
-    // Gets reset back to zero when `RESET` = 1
     a[0]' = a[0] * (1 - RESET) + freeInA[0] * FACTOR[0] + 256 * freeInA[1] * FACTOR[0];
     a[1]' = a[1] * (1 - RESET) + freeInA[0] * FACTOR[1] + 256 * freeInA[1] * FACTOR[1];
     a[2]' = a[2] * (1 - RESET) + freeInA[0] * FACTOR[2] + 256 * freeInA[1] * FACTOR[2];
