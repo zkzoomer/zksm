@@ -1,5 +1,3 @@
-include "config.pil";
-
 namespace Binary(%N);
     /*
         PLOOKUP OPERATIONS
