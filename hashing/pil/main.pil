@@ -49,6 +49,7 @@ namespace Main(%N);
     ////////// Operations
     pol commit hashP, hashP1, hashPLen, hashPDigest;
     pol commit bin, binOpcode;
+    pol commit assert;
 
     //////////  Intermediary commit polynomials
     pol commit isNeg;
@@ -181,6 +182,17 @@ namespace Main(%N);
     zkPC' = doJMP * (finalJmpAddr - nextNoJmpZkPC) + elseJMP * (finalElseAddr - nextNoJmpZkPC) + nextNoJmpZkPC;
     zkPC * Global.L1 = 0;
 
+    ////////// Equality check assertions
+    (A0 - op0) * assert = 0;
+    (A1 - op1) * assert = 0;
+    (A2 - op2) * assert = 0;
+    (A3 - op3) * assert = 0;
+    (A4 - op4) * assert = 0;
+    (A5 - op5) * assert = 0;
+    (A6 - op6) * assert = 0;
+    (A7 - op7) * assert = 0;
+
+    ////////// Setting as public output the final Merkle root
     public merkleRoot0 = A0(%N - 1);
     public merkleRoot1 = A1(%N - 1);
     public merkleRoot2 = A2(%N - 1);
@@ -211,36 +223,36 @@ namespace Main(%N);
     * ROM Plookpups
     *
     * Code generated with:
-    * node tools/pil_pol_table/bits_compose.js "bin,hashP,hashPDigest,hashPLen,JMP,JMPC,JMPN,setA,setB,setC,setD,setHASHPOS,useJmpAddr,JMPZ,hashP1,useElseAddr" -b
+    * node tools/pil_pol_table/bits_compose.js "assert,bin,hashP,hashPDigest,hashPLen,JMP,JMPC,JMPN,setA,setB,setC,setD,setHASHPOS,useJmpAddr,JMPZ,hashP1,useElseAddr" -b
     * inside https://github.com/0xPolygonHermez/zkevm-proverjs
     *
     */
 
     // Instructions being done are encoded within `operation` -- can be a combination of many instructions
     pol operations = 
-          2**0  * bin           + 2**1  * hashP         + 2**2  * hashPDigest   + 2**3  * hashPLen
-        + 2**4  * JMP           + 2**5  * JMPC          + 2**6  * JMPN          + 2**7  * setA
-        + 2**8  * setB          + 2**9  * setC          + 2**10 * setD          + 2**11 * setE
-        + 2**12 * setHASHPOS    + 2**13 * useJmpAddr    + 2**14 * JMPZ          + 2**15 * hashP1
-        + 2**16 * useElseAddr;
+      2**0  * assert        + 2**1  * bin           + 2**2  * hashP         + 2**3  * hashPDigest
+    + 2**4  * hashPLen      + 2**5  * JMP           + 2**6  * JMPC          + 2**7  * JMPN
+    + 2**8  * setA          + 2**9  * setB          + 2**10 * setC          + 2**11 * setD
+    + 2**12 * setHASHPOS    + 2**13 * useJmpAddr    + 2**14 * JMPZ          + 2**15 * hashP1
+    + 2**16 * useElseAddr   
 
-        (1 - bin) * bin = 0;
-        (1 - hashP) * hashP = 0;
-        (1 - hashPDigest) * hashPDigest = 0;
-        (1 - hashPLen) * hashPLen = 0;
-        (1 - JMP) * JMP = 0;
-        (1 - JMPC) * JMPC = 0;
-        (1 - JMPN) * JMPN = 0;
-        (1 - setA) * setA = 0;
-        (1 - setB) * setB = 0;
-        (1 - setC) * setC = 0;
-        (1 - setD) * setD = 0;
-        (1 - setE) * setE = 0;
-        (1 - setHASHPOS) * setHASHPOS = 0;
-        (1 - useJmpAddr) * useJmpAddr = 0;
-        (1 - JMPZ) * JMPZ = 0;
-        (1 - hashP1) * hashP1 = 0;
-        (1 - useElseAddr) * useElseAddr = 0;
+    (1 - assert) * assert = 0;
+    (1 - bin) * bin = 0;
+    (1 - hashP) * hashP = 0;
+    (1 - hashPDigest) * hashPDigest = 0;
+    (1 - hashPLen) * hashPLen = 0;
+    (1 - JMP) * JMP = 0;
+    (1 - JMPC) * JMPC = 0;
+    (1 - JMPN) * JMPN = 0;
+    (1 - setA) * setA = 0;
+    (1 - setB) * setB = 0;
+    (1 - setC) * setC = 0;
+    (1 - setD) * setD = 0;
+    (1 - setHASHPOS) * setHASHPOS = 0;
+    (1 - useJmpAddr) * useJmpAddr = 0;
+    (1 - JMPZ) * JMPZ = 0;
+    (1 - hashP1) * hashP1 = 0;
+    (1 - useElseAddr) * useElseAddr = 0;
 
     {
         CONST0, CONST1, CONST2, CONST3, CONST4, CONST5, CONST6, CONST7,
