@@ -1,7 +1,7 @@
-include "binary.pil";
 include "config.pil";
 include "global.pil";
 include "rom.pil";
+include "binary.pil";
 
 namespace Main(%N);
     /**
