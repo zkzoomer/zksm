@@ -76,6 +76,8 @@ module.exports.execute = async function execute(pols, input, rom, config = {}, m
 
     const checkJmpZero = config.checkJmpZero ? (config.checkJmpZero === "warning" ? WarningCheck:ErrorCheck) : false;
 
+    var freeInputCount = 0;
+
     try {
     for (let step = 0; step < stepsN; step++) {
         const i = step % N;
@@ -332,6 +334,10 @@ module.exports.execute = async function execute(pols, input, rom, config = {}, m
                 if (nHits>1) {
                     throw new Error(`Only one instruction that requires freeIn is allowed ${sourceRef}`);
                 };
+            } else if (l.freeInTag.funcName == "getAFreeInput") {
+                fi = evalCommand(ctx, { ...l.freeInTag, params: freeInputCount });
+                if (!Array.isArray(fi)) fi = scalar2fea(Fr, fi);
+                freeInputCount++;
             } else {
                 fi = evalCommand(ctx, l.freeInTag);
                 if (!Array.isArray(fi)) fi = scalar2fea(Fr, fi);
@@ -1017,7 +1023,7 @@ function eval_functionCall(ctx, tag) {
 };
 
 function eval_getAFreeInput(ctx, tag) {
-    return [ctx.Fr.e(1), ctx.Fr.zero, ctx.Fr.zero, ctx.Fr.zero, ctx.Fr.zero, ctx.Fr.zero, ctx.Fr.zero, ctx.Fr.zero];
+    return scalar2fea(ctx.Fr, Scalar.e(ctx.input[tag.params]))
 };
 
 function eval_beforeLast(ctx) {
