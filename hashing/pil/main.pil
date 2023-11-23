@@ -234,7 +234,7 @@ namespace Main(%N);
     + 2**4  * hashPLen      + 2**5  * JMP           + 2**6  * JMPC          + 2**7  * JMPN
     + 2**8  * setA          + 2**9  * setB          + 2**10 * setC          + 2**11 * setD
     + 2**12 * setHASHPOS    + 2**13 * useJmpAddr    + 2**14 * JMPZ          + 2**15 * hashP1
-    + 2**16 * useElseAddr   
+    + 2**16 * useElseAddr;
 
     (1 - assert) * assert = 0;
     (1 - bin) * bin = 0;
