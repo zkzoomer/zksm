@@ -1,2 +1,0 @@
-; Fixed height of our Merkle tree
-$${ var merkleTreeHeight = 12 }
