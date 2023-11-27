@@ -1,42 +1,42 @@
-INCLUDE "config.zkasm"
-
 start:
-    ; Root of the Merkle tree
-    ${ getMerkleTreeRoot() } => C
     ; Height of the Merkle tree
-    ${ getMerkleTreeHeight() } => D     :JMP(getLeaf)
+    ${ getMerkleTreeHeight() } => C     
+    ; Specifying length value: 256-bit registers
+    32 => D                             :JMP(getLeaf)
 
 getLeaf:
     ; Gets the leaf we are computing the Merkle root for
-    ${ getLeafValue() } => A            :JMP(getLeaf)
+    ${ getLeafValue() } => A            :JMP(merkleProof)
 
 merkleProof:
     ; Set the current hash position to 0 to start a new hash
     0 => HASHPOS
+    32 => D
     ; Load the next index of our Merkle proof
-    ${ getBranchIndex() } => B          :JMPZ(hashRight, hashLeft)
+    ${ getPathIndex() } => B            :JMPZ(rightNode, leftNode)
 
-    ; The branch is on the right, we hash with the left value
-    hashLeft:
-        ${ getBranchValue() } => B      :HASHP(E)
+    ; The Merkle proof is on the left
+    rightNode:
         A                               :HASHP(E)
+        ${ getPathValue() } => B        :HASHP(E), JMP(levelHash)
 
-    ; The branch is on the left, we hash with the right value
-    hashRight:
-        A                               :HASHP(E)
-        ${ getBranchValue() } => B      :HASHP(E)
+    ; The Merkle proof is on the right
+    leftNode:
+        ${ getPathValue() } => B        :HASHP(E)
+        A                               :HASHP(E), JMP(levelHash)
 
-    ; Compute the hash of these two values
-    HASHPOS                             :HASHPLEN(E)
-    ; Get the digest and store it on the A register, the next level the our Merkle proof
-    $ => A                              :HASHPDIGEST(E)
+    levelHash:
+        ; Compute the hash of these two values
+        HASHPOS                         :HASHPLEN(E)
+        ; Get the digest and store it on the A register, the next level of our Merkle proof
+        $ => A                          :HASHPDIGEST(E)
 
-    ; Continue iterating until we reach the root
-    D - 1 => D                          :JMPZ(endMerkleProof, merkleProof)
+        ; Continue iterating until we reach the root
+        C - 1 => C                      :JMPZ(endMerkleProof, merkleProof)
 
 endMerkleProof:
-    ; Verify that the computed root matches the root of the Merkle tree, stored on A
-    C                                   :ASSERT, JMP(finalizeExecution)
+    ; Verify that the computed root matches the given root of the Merkle tree
+    ${ getMerkleTreeRoot() } => C       :ASSERT, JMP(finalizeExecution)
 
 ; Finalize execution by jumping to the final wait
 finalizeExecution:
