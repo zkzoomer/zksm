@@ -30,7 +30,7 @@ namespace Main(%N);
     pol commit D7, D6, D5, D4, D3, D2, D1;
     pol commit D0;
 
-    // D Register
+    // E Register
     pol commit E7, E6, E5, E4, E3, E2, E1;
     pol commit E0;
 
@@ -42,13 +42,11 @@ namespace Main(%N);
     pol commit FREE7, FREE6, FREE5, FREE4, FREE3, FREE2, FREE1, FREE0;
     pol commit inA, inB, inC, inD, inE, inFREE;
     pol commit setA, setB, setC, setD, setE;
-    pol commit JMP, JMPN, JMPC, JMPZ;
-    pol commit carry;
+    pol commit JMP, JMPN, JMPZ;
     pol commit HASHPOS, inHASHPOS, setHASHPOS;
 
     ////////// Operations
     pol commit hashP, hashP1, hashPLen, hashPDigest;
-    pol commit bin, binOpcode;
     pol commit assert;
 
     //////////  Intermediary commit polynomials
@@ -90,10 +88,14 @@ namespace Main(%N);
     pol jmpnCondValue = JMPN * (isNeg * 2**32 + op0);
     isNeg * (1 - isNeg) = 0;
 
-    lJmpnCondValue in Global.STEP;  // 0, 1, 2, 3, ..., 2**21 - 1
+    lJmpnCondValue in Global.STEP;  // 0, 1, 2, 3, ..., 2**17 - 1
 
-    pol commit hJmpnCondValueBit[11];
+    pol commit hJmpnCondValueBit[15];
 
+    hJmpnCondValueBit[14] * (1 - hJmpnCondValueBit[14]) = 0;
+    hJmpnCondValueBit[13] * (1 - hJmpnCondValueBit[13]) = 0;
+    hJmpnCondValueBit[12] * (1 - hJmpnCondValueBit[12]) = 0;
+    hJmpnCondValueBit[11] * (1 - hJmpnCondValueBit[11]) = 0;
     hJmpnCondValueBit[10] * (1 - hJmpnCondValueBit[10]) = 0;
     hJmpnCondValueBit[9]  * (1 - hJmpnCondValueBit[9])  = 0;
     hJmpnCondValueBit[8]  * (1 - hJmpnCondValueBit[8])  = 0;
@@ -106,9 +108,10 @@ namespace Main(%N);
     hJmpnCondValueBit[1]  * (1 - hJmpnCondValueBit[1])  = 0;
     hJmpnCondValueBit[0]  * (1 - hJmpnCondValueBit[0])  = 0;
 
-    jmpnCondValue = 2**31 * hJmpnCondValueBit[10] + 2**30 * hJmpnCondValueBit[9] + 2**29 * hJmpnCondValueBit[8] + 2**28 * hJmpnCondValueBit[7] +
-                    2**27 * hJmpnCondValueBit[6]  + 2**26 * hJmpnCondValueBit[5] + 2**25 * hJmpnCondValueBit[4] + 2**24 * hJmpnCondValueBit[3] +
-                    2**23 * hJmpnCondValueBit[2]  + 2**22 * hJmpnCondValueBit[1] + 2**21 * hJmpnCondValueBit[0] + lJmpnCondValue;
+    jmpnCondValue = 2**31 * hJmpnCondValueBit[14] + 2**30 * hJmpnCondValueBit[13] + 2**29 * hJmpnCondValueBit[12] + 2**28 * hJmpnCondValueBit[11] +
+                    2**27 * hJmpnCondValueBit[10] + 2**26 * hJmpnCondValueBit[9]  + 2**25 * hJmpnCondValueBit[8]  + 2**24 * hJmpnCondValueBit[7]  +
+                    2**23 * hJmpnCondValueBit[6]  + 2**22 * hJmpnCondValueBit[5]  + 2**21 * hJmpnCondValueBit[4]  + 2**20 * hJmpnCondValueBit[3]  +
+                    2**19 * hJmpnCondValueBit[2]  + 2**18 * hJmpnCondValueBit[1]  + 2**17 * hJmpnCondValueBit[0]  + lJmpnCondValue;
 
     /**
     *
@@ -166,8 +169,8 @@ namespace Main(%N);
     HASHPOS' = setHASHPOS * (op0 - HASHPOS) + HASHPOS + hashP * D0 + hashP1;
 
     ////////// ROM line constraint
-    pol doJMP = JMP + JMPN * isNeg + JMPC * carry + JMPZ * op0IsZero;
-    pol elseJMP = JMPN * (1 - isNeg) + JMPC * (1 - carry) + JMPZ * (1 - op0IsZero);
+    pol doJMP = JMP + JMPN * isNeg + JMPZ * op0IsZero;
+    pol elseJMP = JMPN * (1 - isNeg) + JMPZ * (1 - op0IsZero);
 
     pol commit jmpAddr;
     pol commit elseAddr;
@@ -210,7 +213,7 @@ namespace Main(%N);
     Global.LLAST * (A6 - :merkleRoot6) = 0;
     Global.LLAST * (A7 - :merkleRoot7) = 0;
 
-    // Check that the calculated hash is well formed
+    // Check that the calculated hash is well formed: 256-bit range check
     hashPDigest {
         op0, op1, op2, op3, op4, op5, op6, op7
     } is
@@ -223,31 +226,29 @@ namespace Main(%N);
     * ROM Plookpups
     *
     * Code generated with:
-    * node tools/pil_pol_table/bits_compose.js "assert,bin,hashP,hashPDigest,hashPLen,JMP,JMPC,JMPN,setA,setB,setC,setD,setHASHPOS,useJmpAddr,JMPZ,hashP1,useElseAddr" -b
+    * node tools/pil_pol_table/bits_compose.js "assert,hashP,hashPDigest,hashPLen,JMP,JMPN,setA,setB,setC,setD,setE,setHASHPOS,useJmpAddr,JMPZ,hashP1,useElseAddr" -b
     * inside https://github.com/0xPolygonHermez/zkevm-proverjs
     *
     */
 
     // Instructions being done are encoded within `operation` -- can be a combination of many instructions
     pol operations = 
-      2**0  * assert        + 2**1  * bin           + 2**2  * hashP         + 2**3  * hashPDigest
-    + 2**4  * hashPLen      + 2**5  * JMP           + 2**6  * JMPC          + 2**7  * JMPN
-    + 2**8  * setA          + 2**9  * setB          + 2**10 * setC          + 2**11 * setD
-    + 2**12 * setHASHPOS    + 2**13 * useJmpAddr    + 2**14 * JMPZ          + 2**15 * hashP1
-    + 2**16 * useElseAddr;
+      2**0  * assert        + 2**1  * hashP         + 2**2  * hashPDigest   + 2**3  * hashPLen
+    + 2**4  * JMP           + 2**5  * JMPN          + 2**6  * setA          + 2**7  * setB
+    + 2**8  * setC          + 2**9  * setD          + 2**10 * setE          + 2**11 * setHASHPOS
+    + 2**12 * useJmpAddr    + 2**13 * JMPZ          + 2**14 * hashP1        + 2**15 * useElseAddr;
 
     (1 - assert) * assert = 0;
-    (1 - bin) * bin = 0;
     (1 - hashP) * hashP = 0;
     (1 - hashPDigest) * hashPDigest = 0;
     (1 - hashPLen) * hashPLen = 0;
     (1 - JMP) * JMP = 0;
-    (1 - JMPC) * JMPC = 0;
     (1 - JMPN) * JMPN = 0;
     (1 - setA) * setA = 0;
     (1 - setB) * setB = 0;
     (1 - setC) * setC = 0;
     (1 - setD) * setD = 0;
+    (1 - setE) * setE = 0;
     (1 - setHASHPOS) * setHASHPOS = 0;
     (1 - useJmpAddr) * useJmpAddr = 0;
     (1 - JMPZ) * JMPZ = 0;
@@ -259,37 +260,14 @@ namespace Main(%N);
         inA, inB, inC, inD, inE, inFREE,
         inHASHPOS,
         inCntBinary, inCntPaddingPG, inCntPoseidonG,
-        operations, binOpcode, jmpAddr, elseAddr, zkPC
+        operations, jmpAddr, elseAddr, zkPC
     } in {
         Rom.CONST0, Rom.CONST1, Rom.CONST2, Rom.CONST3, Rom.CONST4, Rom.CONST5, Rom.CONST6, Rom.CONST7,
         Rom.inA, Rom.inB, Rom.inC, Rom.inD, Rom.inE, Rom.inFREE,
         Rom.inHASHPOS,
         Rom.inCntBinary, Rom.inCntPaddingPG, Rom.inCntPoseidonG,
-        Rom.operations, Rom.binOpcode, Rom.jmpAddr, Rom.elseAddr, Rom.line
+        Rom.operations, Rom.jmpAddr, Rom.elseAddr, Rom.line
     };
-
-    /**
-    *
-    * Binary Plookpups
-    *
-    */
-
-    bin {
-        binOpcode,
-        A0, A1, A2, A3, A4, A5, A6, A7,
-        B0, B1, B2, B3, B4, B5, B6, B7,
-        op0, op1, op2, op3, op4, op5, op6, op7,
-        carry
-    } is
-    Binary.resultBinOp {
-        Binary.lOpcode,
-        Binary.a[0], Binary.a[1], Binary.a[2], Binary.a[3], Binary.a[4], Binary.a[5], Binary.a[6], Binary.a[7],
-        Binary.b[0], Binary.b[1], Binary.b[2], Binary.b[3], Binary.b[4], Binary.b[5], Binary.b[6], Binary.b[7],
-        Binary.c[0], Binary.c[1], Binary.c[2], Binary.c[3], Binary.c[4], Binary.c[5], Binary.c[6], Binary.c[7],
-        Binary.lCout
-    };
-
-    cntBinary' = cntBinary * (1 - Global.L1) + bin + hashPDigest;
 
     /**
     *
@@ -332,5 +310,6 @@ namespace Main(%N);
         PaddingPG.incCounter
     };
 
+    cntBinary' = cntBinary * (1 - Global.L1) + hashPDigest;
     cntPaddingPG' = cntPaddingPG * (1 - Global.L1) + hashPDigest * incCounter;
     cntPoseidonG' = cntPoseidonG * (1 - Global.L1) + hashPDigest * incCounter;

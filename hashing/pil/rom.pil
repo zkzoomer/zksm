@@ -2,4 +2,4 @@ namespace Rom(%N);
     pol constant CONST0, CONST1, CONST2, CONST3, CONST4, CONST5, CONST6, CONST7;
     pol constant inA, inB, inC, inD, inE, inFREE, inHASHPOS;
     pol constant inCntBinary, inCntPaddingPG, inCntPoseidonG;
-    pol constant operations, binOpcode, jmpAddr, elseAddr, line;
+    pol constant operations, jmpAddr, elseAddr, line;
