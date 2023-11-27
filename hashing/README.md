@@ -1,8 +1,6 @@
-om# WIP
+# Hashing SM
 
-We'll verify a Merkle proof with our rom
-
-inputs: [leaf1, leaf2, node, node, node..., expectedRoot]
+The hashing SM defined inside the [`pil`](./pil/) folder can be used to verify an arbitray number of [Poseidon](https://www.poseidon-hash.info/) hashes. As an example use case, the [`rom`](./rom/merkle-proof.zkasm) file implemented verifies a Merkle proof for a tree of arbitrary height, as corresponding to the [`input`](./rom/input.json) generated [here](./src/utils/get_merkle_proof.js).
 
 The verification by the Main SM of the digest of a Poseidon hash is done in two steps: first, we verify the _computation_ of the hash inside the Poseidon SM; second, we verify that the digest of this hash is a 256-bit number by use of the Binary SM. To make such a range check we only need to use a single opcode (either `ADD` or `SUB`).
 
